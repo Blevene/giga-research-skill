@@ -5,26 +5,49 @@ Multi-provider deep research orchestration for Claude Code. Dispatch research pr
 ## How It Works
 
 ```
-Prompt Craft → Provider Check → Parallel Dispatch → Reconcile & Validate → Report
+Prompt Craft → Setup + Launch → Coordinator Subagent → Report
 ```
 
 1. **Prompt Craft** — Build a structured research prompt through conversation
-2. **Provider Check** — Detect which API keys are configured, offer manual fallback for missing providers
-3. **Dispatch** — Launch deep research on all available providers simultaneously
-4. **Reconcile** — Cross-compare findings, classify agreement levels, validate citations
-5. **Report** — Output a unified report, comparison matrix, and citation audit trail
+2. **Setup + Launch** — Detect providers, create session, launch a single background coordinator
+3. **Coordinator** — Runs the full pipeline (dispatch → validate → compare), then synthesizes a unified report
+4. **Report** — Unified report, comparison matrix, and citation audit trail delivered back to main conversation
 
 Each provider uses its native deep research capability:
 
 | Provider | API | Model |
 |----------|-----|-------|
-| Claude | Messages API | claude-sonnet-4-5-20250929 |
+| Claude | Messages API + Web Search | claude-sonnet-4-5-20250929 |
 | OpenAI | Responses API (background) | o3-deep-research |
 | Gemini | Interactions API (background) | deep-research-pro-preview-12-2025 |
 
-## Quick Start
+## Installation
 
-### 1. Clone and install
+Requires Python 3.11+.
+
+### 1. Install with pip
+
+```bash
+# All providers
+pip install "giga-research[all]"
+
+# Or pick only the providers you need
+pip install "giga-research[claude]"
+pip install "giga-research[claude,openai]"
+pip install "giga-research[gemini]"
+```
+
+### 1a. Install with uv (recommended)
+
+```bash
+# All providers
+uv add "giga-research[all]"
+
+# Or pick only the providers you need
+uv add "giga-research[claude,openai]"
+```
+
+### 1b. Install from source (for development)
 
 ```bash
 git clone <repo-url> giga-research-skill
@@ -32,7 +55,7 @@ cd giga-research-skill
 uv sync --extra dev
 ```
 
-Requires Python 3.11+ and [uv](https://docs.astral.sh/uv/).
+This installs all provider SDKs plus dev tools (pytest, ruff).
 
 ### 2. Configure API keys
 
@@ -50,14 +73,28 @@ OPENAI_API_KEY=sk-...
 GEMINI_API_KEY=AI...
 ```
 
+Where to get each key:
+
+| Provider | Where to get your key | Required plan |
+|----------|----------------------|---------------|
+| Claude | [console.anthropic.com/settings/keys](https://console.anthropic.com/settings/keys) | Any paid plan |
+| OpenAI | [platform.openai.com/api-keys](https://platform.openai.com/api-keys) | Plus or Team (deep research requires o3 access) |
+| Gemini | [aistudio.google.com/apikey](https://aistudio.google.com/apikey) | Free tier works, but deep research may require paid |
+
 The skill works with **any subset** of these keys (minimum 1). Missing providers can be handled via manual fallback during a research session.
 
-Environment variables, if already set in your shell, take precedence over `.env` values.
+Environment variables, if already set in your shell, take precedence over `.env` values. You can also export keys directly in your shell profile instead of using `.env`:
+
+```bash
+export ANTHROPIC_API_KEY="sk-ant-..."
+export OPENAI_API_KEY="sk-..."
+export GEMINI_API_KEY="AI..."
+```
 
 ### 3. Verify setup
 
 ```bash
-uv run python -m giga_research.cli check-providers
+giga-research check-providers
 ```
 
 Expected output (with all keys configured):
@@ -67,9 +104,26 @@ Available providers: claude, openai, gemini
 {"available": ["claude", "openai", "gemini"], "missing": []}
 ```
 
-### 4. Use the skill
+> **Note:** If you installed from source with `uv sync`, use `uv run giga-research` instead of `giga-research`.
 
-The primary interface is the `SKILL.md` file, designed to be used as a [Claude Code skill](https://docs.anthropic.com/en/docs/claude-code/skills). Add this project's directory to your Claude Code skill paths, or invoke the workflow manually by following the phases in `SKILL.md`.
+### 4. Add as a Claude Code skill
+
+The primary interface is the `SKILL.md` file, designed to be used as a [Claude Code skill](https://docs.anthropic.com/en/docs/claude-code/skills).
+
+Add this project's directory to your Claude Code skill paths:
+
+```bash
+# In your project's .claude/settings.json or global settings
+{
+  "skills": [
+    "/path/to/giga-research-skill"
+  ]
+}
+```
+
+Then invoke the skill by asking Claude Code to do deep research — it will pick up the `SKILL.md` workflow automatically.
+
+You can also invoke the workflow manually by following the phases in `SKILL.md`.
 
 ## CLI Reference
 
@@ -80,7 +134,7 @@ The CLI is the programmatic interface used by the skill's subagents. You can als
 Report which API keys are configured.
 
 ```bash
-uv run python -m giga_research.cli check-providers
+giga-research check-providers
 ```
 
 ### research
@@ -88,7 +142,7 @@ uv run python -m giga_research.cli check-providers
 Run deep research on a single provider. Reads the prompt from a file and saves results to the session directory.
 
 ```bash
-uv run python -m giga_research.cli research \
+giga-research research \
     --provider <claude|openai|gemini> \
     --prompt-file <path/to/prompt.md> \
     --session-dir <path/to/session-dir>
@@ -101,12 +155,37 @@ Results are saved to `<session-dir>/raw/<provider>.md` (markdown) and `<session-
 - OpenAI: ~5-10 minutes (background polling at 10s intervals)
 - Gemini: ~5-10 minutes (background polling at 10s intervals)
 
+### orchestrate
+
+Run the full deterministic pipeline for a session: dispatch all available providers in parallel, validate citations, build comparison matrix, and save all structural outputs.
+
+```bash
+giga-research orchestrate \
+    --session-dir <path/to/session-dir> \
+    --depth <0|1|2|3>
+```
+
+Expects `<session-dir>/prompt.md` to already exist. Outputs a JSON summary to stdout:
+
+```json
+{
+  "session_dir": "research-output/20260214-153012-ransomware-landscape",
+  "providers_used": ["claude", "openai", "gemini"],
+  "providers_failed": {},
+  "citation_count": 42,
+  "citations_validated": 0,
+  "topics_identified": ["Threat Landscape", "Key Actors", "Defenses"]
+}
+```
+
+This is the command the coordinator subagent uses internally. It handles all deterministic work — the coordinator only adds LLM synthesis for the unified `report.md`.
+
 ### validate
 
 Validate citations extracted from collected research reports.
 
 ```bash
-uv run python -m giga_research.cli validate \
+giga-research validate \
     --session-dir <path/to/session-dir> \
     --depth <0|1|2|3>
 ```
@@ -135,7 +214,7 @@ research-output/20260214-153012-ransomware-landscape/
 │   ├── gemini.md           # Raw Gemini output
 │   └── gemini.json
 ├── report.md               # Unified reconciled report
-├── comparison-matrix.md    # Topic × provider agreement grid
+├── comparison-matrix.md    # Topic x provider agreement grid
 ├── validation-log.md       # Citation audit trail (if depth > 0)
 └── meta.json               # Session metadata
 ```
@@ -163,9 +242,11 @@ Additional settings are configured in code via the `Config` model:
 
 ```
 src/giga_research/
+├── orchestration/
+│   └── pipeline.py         # Full pipeline: dispatch → validate → compare
 ├── clients/
 │   ├── base.py             # Abstract base with retry + timeout
-│   ├── claude.py           # Anthropic Messages API
+│   ├── claude.py           # Anthropic Messages API + web search citations
 │   ├── openai_client.py    # OpenAI Responses API (deep research)
 │   └── gemini.py           # Google Interactions API (deep research)
 ├── research/
@@ -179,7 +260,7 @@ src/giga_research/
 │   └── report_builder.py   # Markdown report generation
 ├── output/
 │   └── writer.py           # Write all session artifacts
-├── cli.py                  # CLI entry point (3 subcommands)
+├── cli.py                  # CLI entry point (4 subcommands)
 ├── config.py               # Config with .env auto-loading
 ├── errors.py               # Structured error hierarchy
 └── models.py               # Pydantic models (Result, Citation, etc.)
@@ -187,9 +268,10 @@ src/giga_research/
 
 **Key design decisions:**
 
+- **Coordinator pattern** — Post-prompt-approval, the entire workflow runs inside a single background subagent. The `orchestrate` command handles all deterministic work (dispatch, validate, compare); the coordinator subagent adds LLM synthesis for the unified report. This keeps the main conversation clean.
 - **Provider isolation** — Each client implements `_do_research()` behind a common interface. The base class handles retry logic, timeouts, and error wrapping.
 - **Async-first** — All API calls use async clients. The CLI bridges sync/async via `asyncio.run()`.
-- **Graceful degradation** — Missing API keys are detected early. The skill offers manual fallback (paste prompt into provider's web UI, save result to session dir).
+- **Graceful degradation** — Missing API keys are detected early. Failed providers don't block others. The skill offers manual fallback (paste prompt into provider's web UI, save result to session dir).
 - **Structured errors** — `ProviderError` hierarchy (`ProviderTimeoutError`, `ProviderRateLimitError`) enables the base client to make smart retry decisions.
 
 ## Development
@@ -200,7 +282,7 @@ src/giga_research/
 uv run pytest -v
 ```
 
-71 tests covering all modules. Tests mock external API calls — no API keys needed to run the suite.
+87 tests covering all modules. Tests mock external API calls — no API keys needed to run the suite.
 
 ### Lint and format
 
@@ -216,8 +298,9 @@ Ruff is configured for Python 3.11+ with a 120-character line length.
 1. Create `src/giga_research/clients/new_provider.py` implementing `BaseResearchClient`
 2. Implement `is_available()` and `_do_research(prompt) -> ResearchResult`
 3. Add the API key field to `Config` and `Config.from_env()`
-4. Register the provider in `cli.py`'s `client_map`
-5. Add tests in `tests/test_clients/test_new_provider.py`
+4. Add an entry to `CLIENT_REGISTRY` in `config.py` (`ALL_PROVIDERS` derives from it automatically)
+6. Add an optional dependency group in `pyproject.toml` (e.g., `newprovider = ["newprovider-sdk>=1.0"]`) and include it in the `all` extra
+7. Add tests in `tests/test_clients/test_new_provider.py`
 
 ## Manual Fallback Workflow
 

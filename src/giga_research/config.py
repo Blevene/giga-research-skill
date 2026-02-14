@@ -12,7 +12,15 @@ from pydantic import BaseModel, Field
 _SKILL_ROOT = Path(__file__).resolve().parent.parent.parent
 
 
-ALL_PROVIDERS: list[str] = ["claude", "openai", "gemini"]
+# Canonical provider registry: provider name -> (module path, class name, pip extra name)
+# Both cli.py and orchestration/pipeline.py import from this single source of truth.
+CLIENT_REGISTRY: dict[str, tuple[str, str, str]] = {
+    "claude": ("giga_research.clients.claude", "ClaudeClient", "claude"),
+    "openai": ("giga_research.clients.openai_client", "OpenAIClient", "openai"),
+    "gemini": ("giga_research.clients.gemini", "GeminiClient", "gemini"),
+}
+
+ALL_PROVIDERS: list[str] = list(CLIENT_REGISTRY)
 
 
 class Config(BaseModel):

@@ -8,7 +8,7 @@ import json
 import sys
 from pathlib import Path
 
-from giga_research.config import ALL_PROVIDERS, Config
+from giga_research.config import ALL_PROVIDERS, CLIENT_REGISTRY, Config
 
 
 def _cmd_check_providers(config: Config) -> None:
@@ -22,11 +22,26 @@ def _cmd_check_providers(config: Config) -> None:
     print(json.dumps({"available": available, "missing": missing}))
 
 
+def _load_client_class(provider: str) -> type:
+    """Dynamically import a provider's client class.
+
+    Raises ImportError with a helpful message if the provider's SDK is not installed.
+    """
+    import importlib
+
+    module_path, class_name, extra = CLIENT_REGISTRY[provider]
+    try:
+        mod = importlib.import_module(module_path)
+    except ImportError as exc:
+        raise ImportError(
+            f"The {provider} SDK is not installed. "
+            f'Install it with: pip install "giga-research[{extra}]"'
+        ) from exc
+    return getattr(mod, class_name)
+
+
 def _cmd_research(args: argparse.Namespace, config: Config) -> None:
     """Run research on a single provider."""
-    from giga_research.clients.claude import ClaudeClient
-    from giga_research.clients.gemini import GeminiClient
-    from giga_research.clients.openai_client import OpenAIClient
     from giga_research.research.collector import save_result_to_file
 
     prompt_file = Path(args.prompt_file)
@@ -40,17 +55,14 @@ def _cmd_research(args: argparse.Namespace, config: Config) -> None:
         print(f"Error: session dir not found: {session_dir}", file=sys.stderr)
         sys.exit(1)
 
-    client_map = {
-        "claude": ClaudeClient,
-        "openai": OpenAIClient,
-        "gemini": GeminiClient,
-    }
     provider = args.provider
-    if provider not in client_map:
-        print(f"Error: unknown provider: {provider}", file=sys.stderr)
+    try:
+        client_cls = _load_client_class(provider)
+    except ImportError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
         sys.exit(1)
 
-    client = client_map[provider](config)
+    client = client_cls(config)
     if not client.is_available():
         print(f"Error: {provider} API key not configured", file=sys.stderr)
         sys.exit(1)
@@ -129,7 +141,7 @@ def main(argv: list[str] | None = None) -> None:
     validate_p.add_argument("--depth", type=int, default=0, choices=[0, 1, 2, 3])
 
     orchestrate_p = sub.add_parser("orchestrate", help="Run full research pipeline for a session")
-    orchestrate_p.add_argument("--session-dir", required=True, help="Path to session directory (must contain prompt.md)")
+    orchestrate_p.add_argument("--session-dir", required=True, help="Path to session directory (must have prompt.md)")
     orchestrate_p.add_argument("--depth", type=int, default=0, choices=[0, 1, 2, 3], help="Citation validation depth")
 
     args = parser.parse_args(argv)

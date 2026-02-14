@@ -6,8 +6,8 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from giga_research.models import Citation, ResearchResult, ResultMetadata, ValidationStatus
-from giga_research.orchestration.pipeline import PipelineResult, run_pipeline
+from giga_research.models import Citation, ResearchResult, ResultMetadata
+from giga_research.orchestration.pipeline import PipelineResult, _build_clients, run_pipeline
 
 
 def _make_result(provider: str, content: str, citations: list[Citation] | None = None) -> ResearchResult:
@@ -198,3 +198,36 @@ async def test_depth_one_validates_citations(session_dir, config_no_keys):
         result = await run_pipeline(session_dir, depth=1, config=config_no_keys, clients=clients)
 
     assert result.citations_validated > 0
+
+
+def test_build_clients_skips_missing_sdk(config_no_keys):
+    """_build_clients skips providers whose third-party SDK is not installed."""
+    _real_import = __import__("importlib").import_module
+
+    def _fake_import(name):
+        if name == "giga_research.clients.claude":
+            exc = ImportError("No module named 'anthropic'")
+            exc.name = "anthropic"
+            raise exc
+        return _real_import(name)
+
+    with patch("giga_research.orchestration.pipeline.importlib") as mock_importlib:
+        mock_importlib.import_module = _fake_import
+        clients = _build_clients(config_no_keys)
+    # Claude skipped due to missing SDK; others may or may not load depending on env
+    provider_names = [c.provider_name for c in clients]
+    assert "claude" not in provider_names
+
+
+def test_build_clients_reraises_internal_import_error(config_no_keys):
+    """_build_clients re-raises ImportError from giga_research modules (bug, not missing SDK)."""
+
+    def _fake_import(name):
+        exc = ImportError(f"cannot import name 'Foo' from '{name}'")
+        exc.name = name
+        raise exc
+
+    with patch("giga_research.orchestration.pipeline.importlib") as mock_importlib:
+        mock_importlib.import_module = _fake_import
+        with pytest.raises(ImportError, match="giga_research"):
+            _build_clients(config_no_keys)

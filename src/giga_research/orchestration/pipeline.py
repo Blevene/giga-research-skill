@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+import importlib
 from pathlib import Path
 
 from pydantic import BaseModel
 
 from giga_research.clients.base import BaseResearchClient
-from giga_research.config import ALL_PROVIDERS, Config
+from giga_research.config import ALL_PROVIDERS, CLIENT_REGISTRY, Config
 from giga_research.models import Citation, ValidationStatus
 from giga_research.reconciliation.analyzer import (
     build_comparison_matrix,
@@ -35,17 +36,23 @@ class PipelineResult(BaseModel):
 
 
 def _build_clients(config: Config) -> list[BaseResearchClient]:
-    """Build client instances for all available providers."""
-    from giga_research.clients.claude import ClaudeClient
-    from giga_research.clients.gemini import GeminiClient
-    from giga_research.clients.openai_client import OpenAIClient
+    """Build client instances for all available providers.
 
-    client_classes: list[type[BaseResearchClient]] = [ClaudeClient, OpenAIClient, GeminiClient]
+    Gracefully skips providers whose SDK is not installed (optional dependencies).
+    Only catches ImportError for missing third-party SDKs; re-raises other import failures.
+    """
     clients: list[BaseResearchClient] = []
-    for cls in client_classes:
-        client = cls(config)
-        if client.is_available():
-            clients.append(client)
+    for _provider, (module_path, class_name, _extra) in CLIENT_REGISTRY.items():
+        try:
+            mod = importlib.import_module(module_path)
+            cls = getattr(mod, class_name)
+            client = cls(config)
+            if client.is_available():
+                clients.append(client)
+        except ImportError as exc:
+            if exc.name and not exc.name.startswith("giga_research"):
+                continue
+            raise
     return clients
 
 

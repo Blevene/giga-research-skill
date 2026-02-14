@@ -286,28 +286,44 @@ name = "giga-research"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
-    { name = "anthropic" },
-    { name = "google-genai" },
     { name = "httpx" },
-    { name = "openai" },
     { name = "pydantic" },
     { name = "python-dotenv" },
 ]
 
 [package.optional-dependencies]
+all = [
+    { name = "anthropic" },
+    { name = "google-genai" },
+    { name = "openai" },
+]
+claude = [
+    { name = "anthropic" },
+]
 dev = [
+    { name = "anthropic" },
+    { name = "google-genai" },
+    { name = "openai" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "respx" },
     { name = "ruff" },
 ]
+gemini = [
+    { name = "google-genai" },
+]
+openai = [
+    { name = "openai" },
+]
 
 [package.metadata]
 requires-dist = [
-    { name = "anthropic", specifier = ">=0.40" },
-    { name = "google-genai", specifier = ">=1.0" },
+    { name = "anthropic", marker = "extra == 'claude'", specifier = ">=0.40" },
+    { name = "giga-research", extras = ["all"], marker = "extra == 'dev'" },
+    { name = "giga-research", extras = ["claude", "openai", "gemini"], marker = "extra == 'all'" },
+    { name = "google-genai", marker = "extra == 'gemini'", specifier = ">=1.0" },
     { name = "httpx", specifier = ">=0.27" },
-    { name = "openai", specifier = ">=1.50" },
+    { name = "openai", marker = "extra == 'openai'", specifier = ">=1.50" },
     { name = "pydantic", specifier = ">=2.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.24" },
@@ -315,7 +331,7 @@ requires-dist = [
     { name = "respx", marker = "extra == 'dev'", specifier = ">=0.22" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.8" },
 ]
-provides-extras = ["dev"]
+provides-extras = ["claude", "openai", "gemini", "all", "dev"]
 
 [[package]]
 name = "google-auth"

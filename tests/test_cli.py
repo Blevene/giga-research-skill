@@ -4,8 +4,26 @@ from __future__ import annotations
 
 import subprocess
 import sys
+from unittest.mock import patch
 
-from giga_research.cli import main
+import pytest
+
+from giga_research.cli import _load_client_class, main
+
+
+def test_load_client_class_success():
+    """_load_client_class returns the correct class for an installed provider."""
+    cls = _load_client_class("claude")
+    assert cls.__name__ == "ClaudeClient"
+
+
+def test_load_client_class_missing_sdk():
+    """_load_client_class raises ImportError with install hint when SDK is missing."""
+    with (
+        patch("importlib.import_module", side_effect=ImportError("no module")),
+        pytest.raises(ImportError, match='pip install "giga-research\\[claude\\]"'),
+    ):
+        _load_client_class("claude")
 
 
 def test_check_providers_no_keys(capsys, monkeypatch):

@@ -9,7 +9,7 @@ from anthropic import AsyncAnthropic
 from giga_research.clients.base import BaseResearchClient
 from giga_research.config import Config
 from giga_research.errors import ProviderError
-from giga_research.models import ResearchResult, ResultMetadata
+from giga_research.models import Citation, ResearchResult, ResultMetadata
 
 _MODEL = "claude-sonnet-4-5-20250929"
 
@@ -52,11 +52,45 @@ class ClaudeClient(BaseResearchClient):
 
         latency = time.monotonic() - start
 
-        # Extract text from content blocks (web search responses include mixed block types)
+        # Extract text and citations from content blocks.
+        # Web search responses include: ServerToolUseBlock, WebSearchToolResultBlock, TextBlock.
+        # Citations come from two sources:
+        #   1. TextBlock.citations — inline citations with url/title/cited_text
+        #   2. WebSearchToolResultBlock.content — search result items with url/title
         text_parts: list[str] = []
+        seen_urls: set[str] = set()
+        extracted_citations: list[Citation] = []
+
         for block in message.content:
             if hasattr(block, "text"):
                 text_parts.append(block.text)
+                # Extract inline citations from TextBlock
+                if hasattr(block, "citations") and block.citations:
+                    for cite in block.citations:
+                        if hasattr(cite, "url") and cite.url and cite.url not in seen_urls:
+                            seen_urls.add(cite.url)
+                            extracted_citations.append(
+                                Citation(
+                                    text=getattr(cite, "cited_text", ""),
+                                    url=cite.url,
+                                    title=getattr(cite, "title", None),
+                                )
+                            )
+            elif hasattr(block, "type") and block.type == "web_search_tool_result":
+                # Extract URLs from search result blocks
+                if hasattr(block, "content") and isinstance(block.content, list):
+                    for result in block.content:
+                        url = getattr(result, "url", None)
+                        if url and url not in seen_urls:
+                            seen_urls.add(url)
+                            extracted_citations.append(
+                                Citation(
+                                    text=getattr(result, "title", ""),
+                                    url=url,
+                                    title=getattr(result, "title", None),
+                                )
+                            )
+
         content = "\n\n".join(text_parts)
 
         tokens = message.usage.input_tokens + message.usage.output_tokens
@@ -64,7 +98,7 @@ class ClaudeClient(BaseResearchClient):
         return ResearchResult(
             provider="claude",
             content=content,
-            citations=[],
+            citations=extracted_citations,
             metadata=ResultMetadata(
                 model=message.model,
                 tokens_used=tokens,

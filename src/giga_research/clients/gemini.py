@@ -1,7 +1,8 @@
-"""Gemini (Google) research client."""
+"""Gemini (Google) deep research client using the Interactions API."""
 
 from __future__ import annotations
 
+import asyncio
 import time
 
 from google import genai
@@ -11,9 +12,12 @@ from giga_research.config import Config
 from giga_research.errors import ProviderError
 from giga_research.models import ResearchResult, ResultMetadata
 
+_AGENT = "deep-research-pro-preview-12-2025"
+_POLL_INTERVAL_S = 10
+
 
 class GeminiClient(BaseResearchClient):
-    """Research client using the Google Gemini API."""
+    """Research client using Gemini Deep Research via the Interactions API."""
 
     provider_name = "gemini"
 
@@ -33,32 +37,38 @@ class GeminiClient(BaseResearchClient):
 
         start = time.monotonic()
         try:
-            response = await self._client.aio.models.generate_content(
-                model="gemini-2.0-flash",
-                contents=prompt,
-                config=genai.types.GenerateContentConfig(
-                    system_instruction=(
-                        "You are a thorough research assistant. Provide comprehensive, "
-                        "well-cited research with clear structure and evidence-based findings."
-                    ),
-                    max_output_tokens=16384,
-                ),
+            # Launch deep research as a background interaction
+            interaction = self._client.interactions.create(
+                input=prompt,
+                agent=_AGENT,
+                background=True,
             )
+
+            # Poll until completion
+            while True:
+                interaction = self._client.interactions.get(interaction.id)
+                if interaction.status == "completed":
+                    break
+                elif interaction.status == "failed":
+                    error_msg = getattr(interaction, "error", "Unknown error")
+                    raise ProviderError("gemini", f"Deep research failed: {error_msg}")
+                await asyncio.sleep(_POLL_INTERVAL_S)
+
+        except ProviderError:
+            raise
         except Exception as exc:
             raise ProviderError("gemini", str(exc)) from exc
 
         latency = time.monotonic() - start
-        content = response.text or ""
-        prompt_tokens = getattr(response.usage_metadata, "prompt_token_count", 0) or 0
-        completion_tokens = getattr(response.usage_metadata, "candidates_token_count", 0) or 0
+        content = interaction.outputs[-1].text if interaction.outputs else ""
 
         return ResearchResult(
             provider="gemini",
             content=content,
             citations=[],
             metadata=ResultMetadata(
-                model="gemini-2.0-flash",
-                tokens_used=prompt_tokens + completion_tokens,
+                model=_AGENT,
+                tokens_used=0,  # Interactions API doesn't expose token counts directly
                 latency_s=round(latency, 2),
             ),
         )

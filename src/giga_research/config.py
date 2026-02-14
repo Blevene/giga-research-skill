@@ -1,11 +1,15 @@
-"""Configuration loaded from environment variables."""
+"""Configuration loaded from environment variables and .env file."""
 
 from __future__ import annotations
 
 import os
 from pathlib import Path
 
+from dotenv import load_dotenv
 from pydantic import BaseModel, Field
+
+# Resolve the skill root directory (two levels up from this file: src/giga_research/config.py -> project root)
+_SKILL_ROOT = Path(__file__).resolve().parent.parent.parent
 
 
 class Config(BaseModel):
@@ -33,8 +37,14 @@ class Config(BaseModel):
         return providers
 
     @classmethod
-    def from_env(cls) -> Config:
-        """Load configuration from environment variables."""
+    def from_env(cls, env_file: Path | None = None) -> Config:
+        """Load configuration from .env file (in skill root) then environment variables.
+
+        The .env file at the skill root is loaded first, but existing environment
+        variables take precedence (override=False by default in dotenv).
+        """
+        dotenv_path = env_file or _SKILL_ROOT / ".env"
+        load_dotenv(dotenv_path)
         return cls(
             claude_api_key=os.environ.get("ANTHROPIC_API_KEY"),
             openai_api_key=os.environ.get("OPENAI_API_KEY"),

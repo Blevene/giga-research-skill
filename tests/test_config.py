@@ -46,7 +46,10 @@ def test_config_from_env():
         "OPENAI_API_KEY": "openai-secret",
         "GEMINI_API_KEY": "gemini-secret",
     }
-    with patch.dict(os.environ, env, clear=False):
+    with (
+        patch("giga_research.config.load_dotenv"),
+        patch.dict(os.environ, env, clear=False),
+    ):
         c = Config.from_env()
     assert c.claude_api_key == "claude-secret"
     assert c.openai_api_key == "openai-secret"
@@ -55,12 +58,15 @@ def test_config_from_env():
 
 def test_config_from_env_partial():
     env = {"OPENAI_API_KEY": "only-openai"}
-    with patch.dict(os.environ, env, clear=False):
-        cleaned = {k: v for k, v in os.environ.items()}
-        cleaned.pop("ANTHROPIC_API_KEY", None)
-        cleaned.pop("GEMINI_API_KEY", None)
-        with patch.dict(os.environ, cleaned, clear=True):
-            c = Config.from_env()
+    cleaned = {k: v for k, v in os.environ.items()}
+    cleaned.pop("ANTHROPIC_API_KEY", None)
+    cleaned.pop("GEMINI_API_KEY", None)
+    cleaned["OPENAI_API_KEY"] = "only-openai"
+    with (
+        patch("giga_research.config.load_dotenv"),
+        patch.dict(os.environ, cleaned, clear=True),
+    ):
+        c = Config.from_env()
     assert c.openai_api_key == "only-openai"
     assert c.claude_api_key is None
     assert c.gemini_api_key is None

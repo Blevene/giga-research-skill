@@ -18,12 +18,19 @@ cd <path-to-giga-research-skill>
 uv sync
 ```
 
-API keys should be set as environment variables:
+API keys are loaded automatically from a `.env` file in the skill folder root:
+
+```bash
+cp .env.example .env
+# Edit .env and fill in your API keys
+```
+
+Supported keys:
 - `ANTHROPIC_API_KEY` — for Claude
 - `OPENAI_API_KEY` — for OpenAI
 - `GEMINI_API_KEY` — for Gemini (uses Deep Research via Interactions API)
 
-The skill works with any subset of these (minimum 1).
+The skill works with any subset of these (minimum 1). Environment variables, if already set, take precedence over the `.env` file.
 
 ## Workflow
 

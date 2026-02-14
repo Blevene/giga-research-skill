@@ -112,20 +112,25 @@ Available providers: claude, openai, gemini
 
 The primary interface is the `SKILL.md` file, designed to be used as a [Claude Code skill](https://docs.anthropic.com/en/docs/claude-code/skills).
 
-Add this project's directory to your Claude Code skill paths:
+Point Claude Code at the project directory. The simplest way is to add it to your project's `.claude/settings.json`:
 
-```bash
-# In your project's .claude/settings.json or global settings
+```json
 {
-  "skills": [
-    "/path/to/giga-research-skill"
-  ]
+  "permissions": {
+    "allow": [],
+    "deny": []
+  },
+  "skills": ["/path/to/giga-research-skill"]
 }
 ```
 
-Then invoke the skill by asking Claude Code to do deep research — it will pick up the `SKILL.md` workflow automatically.
+Or symlink it into your global skills directory for access from any project:
 
-You can also invoke the workflow manually by following the phases in `SKILL.md`.
+```bash
+ln -s /path/to/giga-research-skill ~/.claude/skills/giga-research
+```
+
+Then invoke the skill by asking Claude Code to do deep research — it will pick up the `SKILL.md` workflow automatically.
 
 ## CLI Reference
 
@@ -311,8 +316,8 @@ Ruff is configured for Python 3.11+ with a 120-character line length.
 2. Implement `is_available()` and `_do_research(prompt) -> ResearchResult`
 3. Add the API key field to `Config` and `Config.from_env()`
 4. Add an entry to `CLIENT_REGISTRY` in `config.py` (`ALL_PROVIDERS` derives from it automatically)
-6. Add an optional dependency group in `pyproject.toml` (e.g., `newprovider = ["newprovider-sdk>=1.0"]`) and include it in the `all` extra
-7. Add tests in `tests/test_clients/test_new_provider.py`
+5. Add an optional dependency group in `pyproject.toml` (e.g., `newprovider = ["newprovider-sdk>=1.0"]`) and include it in the `all` extra
+6. Add tests in `tests/test_clients/test_new_provider.py`
 
 ## Manual Fallback Workflow
 

@@ -1,36 +1,100 @@
 ---
 name: giga-research
-description: Orchestrate multi-provider deep research with parallel dispatch, citation validation, and reconciled report output.
+description: >
+  Deep research on any topic using Claude, OpenAI, and Gemini in parallel.
+  Dispatches the same research prompt to multiple AI providers, then
+  synthesizes findings into a unified report with cross-source consensus
+  tagging (consensus/majority/contested/unique), citation validation, and a
+  provider comparison matrix.
+
+  Activate when user asks to: "research [topic]", "deep research on [topic]",
+  "investigate [topic]", "do a literature review on [topic]", "compare what
+  AI providers say about [topic]", "multi-source analysis of [topic]", or
+  "fact-check [claims] across providers". Also activates for: "research
+  report", "comprehensive report", "cross-validate", "synthesize research".
+
+  Do NOT use for: quick factual lookups (use web search instead), single-source
+  questions, code generation, or tasks that don't need multi-provider research.
+
+  Workflow: (1) conversational prompt crafting with user approval gate,
+  (2) provider detection + session creation, (3) background coordinator
+  subagent runs full pipeline and synthesizes report. Produces: report.md,
+  comparison-matrix.md, validation-log.md, raw provider reports, meta.json.
+  Typical runtime: 5-10 minutes. Works with 1-3 providers; missing ones
+  support manual fallback via web UI.
 ---
 
 # Giga Research
 
-## Overview
-
 Orchestrate deep research across Claude, OpenAI, and Gemini in parallel. Craft a research prompt conversationally, then launch a single background coordinator that dispatches providers, validates citations, and synthesizes a unified report — all without polluting the main conversation.
 
-## Prerequisites
+## When to Use This Skill
 
-This skill requires the `giga_research` Python package. Before starting:
+Activate when the user:
+- Asks to "research [topic]" or "do deep research on [topic]"
+- Wants a comprehensive report synthesized from multiple AI sources
+- Needs cross-validation or fact-checking of claims across providers
+- Asks to "compare what Claude, OpenAI, and Gemini say about [topic]"
+- Wants citation-validated research with source verification
+- Mentions "research report", "multi-provider research", or "deep research"
 
-```bash
-cd <path-to-giga-research-skill>
-uv sync
-```
+## What You Get
 
-API keys are loaded automatically from a `.env` file in the skill folder root:
+A timestamped research session containing:
+- **report.md** — Unified report with consensus/majority/contested/unique tagging per claim
+- **comparison-matrix.md** — Side-by-side topic coverage across providers
+- **validation-log.md** — Citation audit trail (if validation depth > 0)
+- **raw/\*.md** — Original report from each provider for reference
+- **meta.json** — Timing, token usage, and session metadata
 
-```bash
-cp .env.example .env
-# Edit .env and fill in your API keys
-```
+## Providers
 
-Supported keys:
+| Provider | Model | Method | Typical Time |
+|----------|-------|--------|-------------|
+| Claude | claude-sonnet-4-5 | Messages API + web search | ~1-2 min |
+| OpenAI | o3-deep-research | Responses API (background polling) | ~5-10 min |
+| Gemini | deep-research-pro | Interactions API (background polling) | ~5-10 min |
+
+Works with any subset (minimum 1). Missing providers can use manual fallback (paste prompt into web UI, save result to session directory).
+
+## Example Invocations
+
+**Basic:**
+> "Research the current state of quantum computing — what's practical vs. theoretical"
+
+**Targeted:**
+> "Do deep research on ransomware threat actors in 2025-2026. Focus on tactics, key groups, and defense strategies. Use all three providers."
+
+**Comparison-focused:**
+> "Compare what different AI research providers say about the future of nuclear fusion energy. Highlight where they agree and disagree."
+
+---
+
+## Setup
+
+**`SKILL_ROOT`** is the directory containing this SKILL.md file. All CLI commands use `uv run --project <SKILL_ROOT>` so they work from any working directory and auto-install dependencies on first run.
+
+**API keys required** (at least 1):
 - `ANTHROPIC_API_KEY` — for Claude
 - `OPENAI_API_KEY` — for OpenAI
 - `GEMINI_API_KEY` — for Gemini (uses Deep Research via Interactions API)
 
-The skill works with any subset of these (minimum 1). Environment variables, if already set, take precedence over the `.env` file.
+Keys can be set as environment variables or in a `.env` file at `<SKILL_ROOT>/.env`:
+
+```bash
+cp <SKILL_ROOT>/.env.example <SKILL_ROOT>/.env
+# Edit .env and fill in your API keys
+```
+
+Environment variables, if already set, take precedence over the `.env` file.
+
+**Verify installation and API keys:**
+
+```bash
+uv run --project <SKILL_ROOT> giga-research check-providers
+```
+
+This both verifies that dependencies are installed (auto-installing if needed) and reports which API keys are configured. The first run takes 10-30s to install dependencies; subsequent runs are instant.
 
 ## Workflow
 
@@ -88,18 +152,17 @@ The prompt should follow this structure:
 
 After the user approves the prompt:
 
-1. Run: `uv run python -m giga_research.cli check-providers`
+1. Run:
+   ```bash
+   uv run --project <SKILL_ROOT> giga-research check-providers
+   ```
 2. Report to the user which providers are available and which are missing.
 3. For each missing provider, ask: **skip** or **manual fallback**?
 4. Create the session directory:
    ```bash
-   uv run python -c "
-   from giga_research.research.collector import create_session_dir
-   from pathlib import Path
-   d = create_session_dir(Path('research-output'), '<topic-slug>')
-   print(d)
-   "
+   uv run --project <SKILL_ROOT> giga-research create-session --topic "<topic-slug>"
    ```
+   This prints the absolute session directory path.
 5. Save the approved prompt to `<session-dir>/prompt.md`.
 6. Ask the user for citation validation depth (0-3):
    - **0** — No validation (default, fastest)
@@ -118,7 +181,7 @@ After the user approves the prompt:
 
 ## Coordinator Subagent Instructions
 
-**Launch ONE background subagent** using the Task tool with the following prompt template. Replace `<session-dir>` and `<depth>` with actual values.
+**Launch ONE background subagent** using the Task tool with the following prompt template. Replace `<SKILL_ROOT>`, `<session-dir>` and `<depth>` with actual values.
 
 ```
 You are a research coordinator. Your job is to run the research pipeline, then synthesize a unified report.
@@ -127,7 +190,7 @@ You are a research coordinator. Your job is to run the research pipeline, then s
 
 Run this command:
 ```bash
-uv run python -m giga_research.cli orchestrate \
+uv run --project <SKILL_ROOT> giga-research orchestrate \
     --session-dir <session-dir> \
     --depth <depth>
 ```
@@ -194,19 +257,6 @@ Report back with:
 5. The path to report.md as the primary deliverable
 6. Paths to all output files in the session directory
 ```
-
----
-
-## Session Output
-
-The coordinator produces these files in `<session-dir>/`:
-- `report.md` — unified synthesized report (written by coordinator)
-- `comparison-matrix.md` — topic x provider grid (written by pipeline)
-- `validation-log.md` — citation audit trail (written by pipeline)
-- `raw/<provider>.md` — original provider reports (written by pipeline)
-- `raw/<provider>.json` — full result with metadata (written by pipeline)
-- `prompt.md` — the research prompt (written by parent in Phase 2)
-- `meta.json` — session metadata with timing/tokens (written by pipeline)
 
 ---
 

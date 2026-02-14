@@ -57,6 +57,8 @@ uv sync --extra dev
 
 This installs all provider SDKs plus dev tools (pytest, ruff).
 
+> **Skill users:** If you're using this as a Claude Code skill, you don't need to run `uv sync` manually. All CLI commands use `uv run --project <path>` which auto-creates the venv and installs deps on first run.
+
 ### 2. Configure API keys
 
 Copy the example env file and fill in your keys:
@@ -136,6 +138,16 @@ Report which API keys are configured.
 ```bash
 giga-research check-providers
 ```
+
+### create-session
+
+Create a timestamped session directory for a research topic.
+
+```bash
+giga-research create-session --topic <topic-slug> [--output-dir <path>]
+```
+
+Prints the absolute path of the created session directory. Defaults to `<skill-root>/research-output/` if `--output-dir` is not specified.
 
 ### research
 
@@ -260,7 +272,7 @@ src/giga_research/
 │   └── report_builder.py   # Markdown report generation
 ├── output/
 │   └── writer.py           # Write all session artifacts
-├── cli.py                  # CLI entry point (4 subcommands)
+├── cli.py                  # CLI entry point (5 subcommands)
 ├── config.py               # Config with .env auto-loading
 ├── errors.py               # Structured error hierarchy
 └── models.py               # Pydantic models (Result, Citation, etc.)
@@ -282,7 +294,7 @@ src/giga_research/
 uv run pytest -v
 ```
 
-87 tests covering all modules. Tests mock external API calls — no API keys needed to run the suite.
+91+ tests covering all modules. Tests mock external API calls — no API keys needed to run the suite.
 
 ### Lint and format
 

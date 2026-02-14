@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 
 # Resolve the skill root directory (two levels up from this file: src/giga_research/config.py -> project root)
-_SKILL_ROOT = Path(__file__).resolve().parent.parent.parent
+SKILL_ROOT = Path(__file__).resolve().parent.parent.parent
 
 
 # Canonical provider registry: provider name -> (module path, class name, pip extra name)
@@ -54,7 +54,7 @@ class Config(BaseModel):
         The .env file at the skill root is loaded first, but existing environment
         variables take precedence (override=False by default in dotenv).
         """
-        dotenv_path = env_file or _SKILL_ROOT / ".env"
+        dotenv_path = env_file or SKILL_ROOT / ".env"
         load_dotenv(dotenv_path)
         return cls(
             claude_api_key=os.environ.get("ANTHROPIC_API_KEY"),

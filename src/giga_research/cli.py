@@ -8,7 +8,13 @@ import json
 import sys
 from pathlib import Path
 
-from giga_research.config import ALL_PROVIDERS, CLIENT_REGISTRY, Config
+from giga_research.config import ALL_PROVIDERS, CLIENT_REGISTRY, SKILL_ROOT, Config
+
+
+def _cli_error(message: str) -> None:
+    """Print a JSON error to stderr and exit."""
+    print(json.dumps({"error": message}), file=sys.stderr)
+    sys.exit(1)
 
 
 def _cmd_check_providers(config: Config) -> None:
@@ -46,26 +52,22 @@ def _cmd_research(args: argparse.Namespace, config: Config) -> None:
 
     prompt_file = Path(args.prompt_file)
     if not prompt_file.exists():
-        print(f"Error: prompt file not found: {prompt_file}", file=sys.stderr)
-        sys.exit(1)
+        _cli_error(f"prompt file not found: {prompt_file}")
     prompt = prompt_file.read_text(encoding="utf-8")
 
     session_dir = Path(args.session_dir)
     if not session_dir.exists():
-        print(f"Error: session dir not found: {session_dir}", file=sys.stderr)
-        sys.exit(1)
+        _cli_error(f"session dir not found: {session_dir}")
 
     provider = args.provider
     try:
         client_cls = _load_client_class(provider)
     except ImportError as exc:
-        print(f"Error: {exc}", file=sys.stderr)
-        sys.exit(1)
+        _cli_error(str(exc))
 
     client = client_cls(config)
     if not client.is_available():
-        print(f"Error: {provider} API key not configured", file=sys.stderr)
-        sys.exit(1)
+        _cli_error(f"{provider} API key not configured")
 
     result = asyncio.run(client.research(prompt))
     save_result_to_file(session_dir, result)
@@ -84,19 +86,25 @@ def _cmd_orchestrate(args: argparse.Namespace, config: Config) -> None:
 
     session_dir = Path(args.session_dir)
     if not session_dir.exists():
-        print(json.dumps({"error": f"session dir not found: {session_dir}"}), file=sys.stderr)
-        sys.exit(1)
+        _cli_error(f"session dir not found: {session_dir}")
     if not (session_dir / "prompt.md").exists():
-        print(json.dumps({"error": f"prompt.md not found in {session_dir}"}), file=sys.stderr)
-        sys.exit(1)
+        _cli_error(f"prompt.md not found in {session_dir}")
 
     depth = args.depth
     try:
         result = asyncio.run(run_pipeline(session_dir, depth=depth, config=config))
     except Exception as exc:
-        print(json.dumps({"error": str(exc)}), file=sys.stderr)
-        sys.exit(1)
+        _cli_error(str(exc))
     print(json.dumps(result.model_dump(), indent=2))
+
+
+def _cmd_create_session(args: argparse.Namespace) -> None:
+    """Create a timestamped session directory and print its absolute path."""
+    from giga_research.research.collector import create_session_dir
+
+    output_dir = Path(args.output_dir)
+    session_dir = create_session_dir(output_dir, args.topic)
+    print(session_dir.resolve())
 
 
 def _cmd_validate(args: argparse.Namespace, config: Config) -> None:
@@ -131,6 +139,14 @@ def main(argv: list[str] | None = None) -> None:
 
     sub.add_parser("check-providers", help="Report which API keys are configured")
 
+    create_session_p = sub.add_parser("create-session", help="Create a timestamped session directory")
+    create_session_p.add_argument("--topic", required=True, help="Topic slug for the session directory name")
+    create_session_p.add_argument(
+        "--output-dir",
+        default=str(SKILL_ROOT / "research-output"),
+        help="Base output directory (default: <skill-root>/research-output)",
+    )
+
     research_p = sub.add_parser("research", help="Run research on a single provider")
     research_p.add_argument("--provider", required=True, choices=ALL_PROVIDERS)
     research_p.add_argument("--prompt-file", required=True, help="Path to prompt file")
@@ -145,6 +161,12 @@ def main(argv: list[str] | None = None) -> None:
     orchestrate_p.add_argument("--depth", type=int, default=0, choices=[0, 1, 2, 3], help="Citation validation depth")
 
     args = parser.parse_args(argv)
+
+    if args.command == "create-session":
+        _cmd_create_session(args)
+        return
+
+    # Commands below require API key configuration
     config = Config.from_env()
 
     if args.command == "check-providers":

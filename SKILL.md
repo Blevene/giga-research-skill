@@ -7,7 +7,7 @@ description: Orchestrate multi-provider deep research with parallel dispatch, ci
 
 ## Overview
 
-Orchestrate deep research across Claude, OpenAI, and Gemini in parallel. Craft a research prompt conversationally, dispatch it to all available providers, then reconcile the results into one authoritative report with citation validation.
+Orchestrate deep research across Claude, OpenAI, and Gemini in parallel. Craft a research prompt conversationally, then launch a single background coordinator that dispatches providers, validates citations, and synthesizes a unified report — all without polluting the main conversation.
 
 ## Prerequisites
 
@@ -39,22 +39,15 @@ digraph workflow {
     rankdir=TB;
     "Phase 1: Prompt Craft" [shape=box];
     "User approves prompt?" [shape=diamond];
-    "Phase 2: Provider Check" [shape=box];
-    "Phase 3: Dispatch Research" [shape=box];
-    "All results collected?" [shape=diamond];
-    "Phase 4: Reconcile & Validate" [shape=box];
-    "Phase 5: Output Report" [shape=box];
+    "Phase 2: Setup + Launch" [shape=box];
+    "Coordinator Subagent" [shape=box, style=filled, fillcolor=lightblue];
     "Done" [shape=doublecircle];
 
     "Phase 1: Prompt Craft" -> "User approves prompt?";
     "User approves prompt?" -> "Phase 1: Prompt Craft" [label="revise"];
-    "User approves prompt?" -> "Phase 2: Provider Check" [label="approved"];
-    "Phase 2: Provider Check" -> "Phase 3: Dispatch Research";
-    "Phase 3: Dispatch Research" -> "All results collected?";
-    "All results collected?" -> "Phase 3: Dispatch Research" [label="waiting for manual"];
-    "All results collected?" -> "Phase 4: Reconcile & Validate" [label="yes"];
-    "Phase 4: Reconcile & Validate" -> "Phase 5: Output Report";
-    "Phase 5: Output Report" -> "Done";
+    "User approves prompt?" -> "Phase 2: Setup + Launch" [label="approved"];
+    "Phase 2: Setup + Launch" -> "Coordinator Subagent";
+    "Coordinator Subagent" -> "Done" [label="returns summary"];
 }
 ```
 
@@ -91,7 +84,9 @@ The prompt should follow this structure:
 
 ---
 
-## Phase 2: Provider Check
+## Phase 2: Setup + Launch
+
+After the user approves the prompt:
 
 1. Run: `uv run python -m giga_research.cli check-providers`
 2. Report to the user which providers are available and which are missing.
@@ -106,65 +101,56 @@ The prompt should follow this structure:
    "
    ```
 5. Save the approved prompt to `<session-dir>/prompt.md`.
+6. Ask the user for citation validation depth (0-3):
+   - **0** — No validation (default, fastest)
+   - **1** — URL liveness check
+   - **2** — Content verification (checks if cited claim exists in source)
+   - **3** — Full verification + find replacements for dead citations
+7. **Launch the coordinator subagent** as a single background Task using the prompt template below.
+8. Tell the user: "Research is running in the background. I'll report back when it's done."
 
----
-
-## Phase 3: Dispatch Research
-
-**For each available API provider**, launch a subagent **in parallel** using the Task tool:
-
-Each subagent should run:
-```bash
-uv run python -m giga_research.cli research \
-    --provider <provider> \
-    --prompt-file <session-dir>/prompt.md \
-    --session-dir <session-dir>
-```
-
-Launch ALL provider subagents in a single message (parallel Task calls).
-
-**Note on Gemini:** The Gemini deep research agent runs asynchronously via the Interactions API. The CLI handles the polling loop internally. Expect Gemini to take several minutes.
-
-**For manual fallback providers:**
-1. Tell the user: "Please paste the prompt from `<session-dir>/prompt.md` into [Provider]'s deep research interface."
+**For manual fallback providers** (if any):
+1. Before launching the coordinator, tell the user: "Please paste the prompt from `<session-dir>/prompt.md` into [Provider]'s deep research interface."
 2. Ask them to save the result to `<session-dir>/raw/<provider>.md`
-3. Wait for confirmation before proceeding.
-
-**GATE:** All results (API + manual) must be present in `<session-dir>/raw/` before proceeding.
+3. Wait for confirmation, then launch the coordinator.
 
 ---
 
-## Phase 4: Reconcile & Validate
+## Coordinator Subagent Instructions
 
-### Step 1: Citation Validation
+**Launch ONE background subagent** using the Task tool with the following prompt template. Replace `<session-dir>` and `<depth>` with actual values.
 
-Ask the user for validation depth:
-- **0** — No validation (default, fastest)
-- **1** — URL liveness check
-- **2** — Content verification (checks if cited claim exists in source)
-- **3** — Full verification + find replacements for dead citations
+```
+You are a research coordinator. Your job is to run the research pipeline, then synthesize a unified report.
 
-If depth > 0, run:
+## Step 1: Run the pipeline
+
+Run this command:
 ```bash
-uv run python -m giga_research.cli validate \
+uv run python -m giga_research.cli orchestrate \
     --session-dir <session-dir> \
-    --depth <N>
+    --depth <depth>
 ```
 
-### Step 2: Cross-Report Analysis
+Parse the JSON output. It will contain:
+- providers_used: which providers returned results
+- providers_failed: which providers failed (with error messages)
+- citation_count: total citations found
+- citations_validated: how many were validated
+- topics_identified: list of topics from cross-report analysis
 
-Read all reports from `<session-dir>/raw/`. For each report:
-1. Identify the major topics/sections covered
-2. For each shared topic, compare claims across providers
-3. Classify each claim:
-   - **Consensus** — all sources agree (high confidence)
-   - **Majority** — 2 of 3 agree (note the dissent)
-   - **Contested** — sources disagree (present all perspectives)
-   - **Unique** — only one source covers it (note single-source)
+If all providers failed, report this back and stop.
 
-### Step 3: Synthesize Unified Report
+## Step 2: Read the generated files
 
-Write `<session-dir>/report.md` with this structure:
+Read these files from <session-dir>:
+- raw/<provider>.md for each provider in providers_used
+- comparison-matrix.md
+- validation-log.md (if depth > 0)
+
+## Step 3: Synthesize unified report
+
+Using the raw reports and comparison matrix, write <session-dir>/report.md with this structure:
 
 ```markdown
 # [Topic] — Research Report
@@ -179,6 +165,11 @@ Citation validation depth: [N].
 ## Findings
 ### [Topic 1]
 [Synthesized findings. Tag sources: [Claude, OpenAI], [Gemini only], etc.]
+[Classify each claim:]
+- **Consensus** — all sources agree (high confidence)
+- **Majority** — 2 of 3 agree (note the dissent)
+- **Contested** — sources disagree (present all perspectives)
+- **Unique** — only one source covers it (note single-source)
 
 ### [Topic 2]
 ...
@@ -193,27 +184,34 @@ Citation validation depth: [N].
 [Deduplicated, validated citation list]
 ```
 
+## Step 4: Return summary
+
+Report back with:
+1. Which providers succeeded/failed
+2. Number of topics identified
+3. Number of citations found and validated
+4. Any notable findings (high disagreement, dead citations, unique insights)
+5. The path to report.md as the primary deliverable
+6. Paths to all output files in the session directory
+```
+
 ---
 
-## Phase 5: Output Report
+## Session Output
 
-Ensure all files are written to `<session-dir>/`:
-- `report.md` — unified report (written in Step 3 above)
-- `comparison-matrix.md` — topic x provider grid
-- `validation-log.md` — citation audit trail (if depth > 0)
-- `raw/<provider>.md` — original reports (already present)
-- `prompt.md` — the research prompt (already present)
-- `meta.json` — session metadata
-
-Present the user with:
-1. A summary of what was produced
-2. The path to `report.md` as the primary deliverable
-3. Any notable findings (high disagreement, dead citations, unique insights)
+The coordinator produces these files in `<session-dir>/`:
+- `report.md` — unified synthesized report (written by coordinator)
+- `comparison-matrix.md` — topic x provider grid (written by pipeline)
+- `validation-log.md` — citation audit trail (written by pipeline)
+- `raw/<provider>.md` — original provider reports (written by pipeline)
+- `raw/<provider>.json` — full result with metadata (written by pipeline)
+- `prompt.md` — the research prompt (written by parent in Phase 2)
+- `meta.json` — session metadata with timing/tokens (written by pipeline)
 
 ---
 
 ## Error Handling
 
-- If a provider API call fails: log the error, offer manual fallback for that provider.
-- If all providers fail: halt and explain what happened. Suggest manual approach.
+- If a provider API call fails: the pipeline isolates the failure and continues with remaining providers. The coordinator reports which providers failed.
+- If all providers fail: the coordinator reports the errors. The parent agent should inform the user and suggest manual fallback.
 - Never silently skip a failure. Always inform the user and offer a path forward.

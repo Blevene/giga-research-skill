@@ -12,6 +12,9 @@ from pydantic import BaseModel, Field
 _SKILL_ROOT = Path(__file__).resolve().parent.parent.parent
 
 
+ALL_PROVIDERS: list[str] = ["claude", "openai", "gemini"]
+
+
 class Config(BaseModel):
     """Application configuration with secrets hidden from repr."""
 

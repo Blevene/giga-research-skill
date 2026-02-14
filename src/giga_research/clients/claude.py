@@ -42,7 +42,10 @@ class ClaudeClient(BaseResearchClient):
                         "content": prompt,
                     }
                 ],
-                system="You are a thorough research assistant. Provide comprehensive, well-cited research with clear structure and evidence-based findings.",
+                system=(
+                    "You are a thorough research assistant. Provide comprehensive, "
+                    "well-cited research with clear structure and evidence-based findings."
+                ),
             )
         except Exception as exc:
             raise ProviderError("claude", str(exc)) from exc

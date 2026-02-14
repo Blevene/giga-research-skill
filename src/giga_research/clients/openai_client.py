@@ -39,7 +39,10 @@ class OpenAIClient(BaseResearchClient):
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are a thorough research assistant. Provide comprehensive, well-cited research with clear structure and evidence-based findings.",
+                        "content": (
+                            "You are a thorough research assistant. Provide comprehensive, "
+                            "well-cited research with clear structure and evidence-based findings."
+                        ),
                     },
                     {
                         "role": "user",

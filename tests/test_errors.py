@@ -5,8 +5,8 @@ from __future__ import annotations
 from giga_research.errors import (
     GigaResearchError,
     ProviderError,
-    ProviderTimeoutError,
     ProviderRateLimitError,
+    ProviderTimeoutError,
     ValidationError,
 )
 

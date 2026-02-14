@@ -59,7 +59,12 @@ def _cmd_research(args: argparse.Namespace, config: Config) -> None:
     result = asyncio.run(client.research(prompt))
     save_result_to_file(session_dir, result)
     print(f"Research complete. Result saved to {session_dir}/raw/{provider}.md")
-    print(json.dumps({"provider": provider, "tokens_used": result.metadata.tokens_used, "latency_s": result.metadata.latency_s}))
+    output = {
+        "provider": provider,
+        "tokens_used": result.metadata.tokens_used,
+        "latency_s": result.metadata.latency_s,
+    }
+    print(json.dumps(output))
 
 
 def _cmd_validate(args: argparse.Namespace, config: Config) -> None:

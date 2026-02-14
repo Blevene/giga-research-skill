@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from giga_research.models import Citation, ResearchResult, ResultMetadata
 from giga_research.reconciliation.analyzer import (
-    extract_citations_from_markdown,
-    deduplicate_citations,
     build_comparison_matrix,
+    deduplicate_citations,
+    extract_citations_from_markdown,
 )
 
 

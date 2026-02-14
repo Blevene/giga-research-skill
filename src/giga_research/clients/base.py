@@ -33,10 +33,8 @@ class BaseResearchClient(ABC):
                     self._do_research(prompt),
                     timeout=self.config.request_timeout,
                 )
-            except asyncio.TimeoutError:
-                raise ProviderTimeoutError(
-                    self.provider_name, self.config.request_timeout
-                )
+            except TimeoutError as exc:
+                raise ProviderTimeoutError(self.provider_name, self.config.request_timeout) from exc
             except ProviderError as exc:
                 last_error = exc
                 if attempt < self.config.max_retries:

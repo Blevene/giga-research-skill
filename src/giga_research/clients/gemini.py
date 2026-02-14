@@ -37,7 +37,10 @@ class GeminiClient(BaseResearchClient):
                 model="gemini-2.0-flash",
                 contents=prompt,
                 config=genai.types.GenerateContentConfig(
-                    system_instruction="You are a thorough research assistant. Provide comprehensive, well-cited research with clear structure and evidence-based findings.",
+                    system_instruction=(
+                        "You are a thorough research assistant. Provide comprehensive, "
+                        "well-cited research with clear structure and evidence-based findings."
+                    ),
                     max_output_tokens=16384,
                 ),
             )

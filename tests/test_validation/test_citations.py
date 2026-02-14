@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from unittest.mock import AsyncMock, patch
 
-import pytest
-
 from giga_research.models import Citation, ValidationStatus
 from giga_research.validation.citations import validate_citations
 
@@ -79,10 +77,7 @@ async def test_depth_2_dead_url_falls_back():
 
 async def test_respects_max_concurrent():
     """Validate that semaphore limits concurrency."""
-    citations = [
-        Citation(text=f"Claim {i}", url=f"https://example.com/{i}")
-        for i in range(20)
-    ]
+    citations = [Citation(text=f"Claim {i}", url=f"https://example.com/{i}") for i in range(20)]
     with patch(
         "giga_research.validation.citations.check_url_alive",
         new_callable=AsyncMock,

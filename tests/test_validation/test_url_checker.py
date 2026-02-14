@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import httpx
-import pytest
 import respx
 
 from giga_research.validation.url_checker import check_url_alive, fetch_url_content

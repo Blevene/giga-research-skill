@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from giga_research.models import ResearchResult
@@ -20,7 +20,7 @@ def _slugify(text: str) -> str:
 
 def create_session_dir(output_dir: Path, topic: str) -> Path:
     """Create a timestamped session directory with raw/ subdirectory."""
-    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+    timestamp = datetime.now(UTC).strftime("%Y%m%d-%H%M%S")
     slug = _slugify(topic)
     session_dir = output_dir / f"{timestamp}-{slug}"
     session_dir.mkdir(parents=True, exist_ok=True)
@@ -59,7 +59,7 @@ def save_session_metadata(
     """Save session metadata as meta.json."""
     meta = {
         "session_id": session_dir.name,
-        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_at": datetime.now(UTC).isoformat(),
         "providers_used": providers_used,
         "providers_skipped": providers_skipped,
         "citation_validation_depth": citation_validation_depth,

@@ -4,9 +4,6 @@ from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock
 
-import pytest
-
-from giga_research.config import Config
 from giga_research.errors import ProviderError
 from giga_research.models import ResearchResult, ResultMetadata
 from giga_research.research.dispatcher import dispatch_research

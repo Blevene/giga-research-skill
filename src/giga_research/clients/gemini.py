@@ -20,6 +20,7 @@ class GeminiClient(BaseResearchClient):
     """Research client using Gemini Deep Research via the Interactions API."""
 
     provider_name = "gemini"
+    default_timeout = 1800  # 30 minutes — deep research is long-running
 
     def __init__(self, config: Config) -> None:
         super().__init__(config)

@@ -20,6 +20,7 @@ class OpenAIClient(BaseResearchClient):
     """Research client using OpenAI Deep Research via the Responses API."""
 
     provider_name = "openai"
+    default_timeout = 1800  # 30 minutes — deep research is long-running
 
     def __init__(self, config: Config) -> None:
         super().__init__(config)

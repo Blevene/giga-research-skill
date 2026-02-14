@@ -19,9 +19,17 @@ class BaseResearchClient(ABC):
     """
 
     provider_name: str = ""
+    # Subclasses can override to set a provider-specific timeout (seconds).
+    # When set, this takes precedence over config.request_timeout.
+    default_timeout: int | None = None
 
     def __init__(self, config: Config) -> None:
         self.config = config
+
+    @property
+    def timeout(self) -> int:
+        """Effective timeout: provider-specific override or global config."""
+        return self.default_timeout if self.default_timeout is not None else self.config.request_timeout
 
     async def research(self, prompt: str) -> ResearchResult:
         """Execute research with retry and timeout."""
@@ -31,10 +39,10 @@ class BaseResearchClient(ABC):
             try:
                 return await asyncio.wait_for(
                     self._do_research(prompt),
-                    timeout=self.config.request_timeout,
+                    timeout=self.timeout,
                 )
             except TimeoutError as exc:
-                raise ProviderTimeoutError(self.provider_name, self.config.request_timeout) from exc
+                raise ProviderTimeoutError(self.provider_name, self.timeout) from exc
             except ProviderError as exc:
                 last_error = exc
                 if attempt < self.config.max_retries:

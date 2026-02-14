@@ -19,7 +19,7 @@ class Config(BaseModel):
     openai_api_key: str | None = Field(default=None, repr=False)
     gemini_api_key: str | None = Field(default=None, repr=False)
 
-    request_timeout: int = 300
+    request_timeout: int = 900
     max_retries: int = 3
     citation_validation_depth: int = Field(default=0, ge=0, le=3)
     output_dir: Path = Path("research-output")

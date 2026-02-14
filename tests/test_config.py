@@ -13,7 +13,7 @@ def test_config_defaults():
     assert c.claude_api_key is None
     assert c.openai_api_key is None
     assert c.gemini_api_key is None
-    assert c.request_timeout == 300
+    assert c.request_timeout == 900
     assert c.max_retries == 3
     assert c.citation_validation_depth == 0
 

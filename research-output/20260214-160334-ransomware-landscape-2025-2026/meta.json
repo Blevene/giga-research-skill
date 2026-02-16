@@ -1,0 +1,41 @@
+{
+  "session_id": "20260214-160334-ransomware-landscape-2025-2026",
+  "topic": "Modern Ransomware Landscape — Threat Actor Analysis (Late 2025–2026)",
+  "created_at": "2026-02-14T16:03:34Z",
+  "providers": {
+    "claude": {
+      "status": "completed",
+      "model": "claude-sonnet-4-5-20250929",
+      "tokens_used": 12145,
+      "latency_s": 260.43,
+      "web_search": false,
+      "notes": "First run without web search. Re-run with web_search_20250305 produced richer stats but citation URLs not captured (known bug)."
+    },
+    "openai": {
+      "status": "completed",
+      "model": "o3-deep-research",
+      "tokens_used": 97787,
+      "latency_s": 894.75,
+      "web_search": true,
+      "notes": "Deep research via Responses API with background polling. Extensive inline URL citations."
+    },
+    "gemini": {
+      "status": "completed",
+      "model": "deep-research-pro-preview-12-2025",
+      "tokens_used": 0,
+      "latency_s": 417.5,
+      "web_search": true,
+      "notes": "Deep research via Interactions API. 45 numbered citations with Google grounding redirect URLs."
+    }
+  },
+  "citation_validation_depth": 0,
+  "output_files": [
+    "prompt.md",
+    "raw/claude.md",
+    "raw/openai.md",
+    "raw/gemini.md",
+    "report.md",
+    "comparison-matrix.md",
+    "meta.json"
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "session_id": "20260214-185409-quantum-computing-2025-2026",
+  "query": "Current State of Quantum Computing (2025-2026)",
+  "created_at": "2026-02-14T18:54:09Z",
+  "completed_at": "2026-02-14T19:45:00Z",
+  "providers": ["claude", "openai", "gemini"],
+  "phases": {
+    "phase_1_research": {
+      "status": "complete",
+      "providers_completed": ["claude", "openai", "gemini"],
+      "raw_reports": [
+        "raw/claude.md",
+        "raw/openai.md",
+        "raw/gemini.md"
+      ]
+    },
+    "phase_2_validation": {
+      "status": "complete",
+      "citation_validation_depth": 1,
+      "total_citations": 148,
+      "alive": 126,
+      "dead": 22,
+      "liveness_rate": 0.851,
+      "log": "validation-log.md"
+    },
+    "phase_3_comparison": {
+      "status": "complete",
+      "output": "comparison-matrix.md",
+      "consensus_areas": 10,
+      "disagreement_areas": 5
+    },
+    "phase_4_synthesis": {
+      "status": "complete",
+      "output": "report.md",
+      "word_count_estimate": 4200,
+      "sections": [
+        "Executive Summary",
+        "Methodology",
+        "Findings (6 subsections)",
+        "Areas of Disagreement",
+        "Gaps & Limitations",
+        "References"
+      ]
+    }
+  },
+  "topic_coverage": {
+    "hardware_milestones": true,
+    "leading_companies": true,
+    "error_correction": true,
+    "commercial_applications": true,
+    "funding_trends": true,
+    "expert_predictions": true,
+    "regional_competition": true,
+    "challenges_and_outlook": true
+  },
+  "confidence_summary": {
+    "consensus_claims": "Claims corroborated by all 3 providers (highest confidence)",
+    "majority_claims": "Claims corroborated by 2 of 3 providers (moderate-high confidence)",
+    "unique_claims": "Claims from a single provider only (lower confidence, unverified by cross-referencing)"
+  }
+}

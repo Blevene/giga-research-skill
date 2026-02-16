@@ -1,0 +1,28 @@
+{
+  "session_id": "20260214-202128-zero-setup-e2e-test",
+  "created_at": "2026-02-14T20:32:19.128239+00:00",
+  "providers_used": [
+    "claude",
+    "openai",
+    "gemini"
+  ],
+  "providers_skipped": [],
+  "citation_validation_depth": 0,
+  "provider_metadata": {
+    "claude": {
+      "model": "claude-sonnet-4-5-20250929",
+      "tokens_used": 86043,
+      "latency_s": 54.82
+    },
+    "openai": {
+      "model": "o3-deep-research-2025-06-26",
+      "tokens_used": 84670,
+      "latency_s": 333.34
+    },
+    "gemini": {
+      "model": "deep-research-pro-preview-12-2025",
+      "tokens_used": 0,
+      "latency_s": 618.45
+    }
+  }
+}

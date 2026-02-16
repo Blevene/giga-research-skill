@@ -1,0 +1,786 @@
+# Modern Ransomware Landscape: Threat Actor Analysis (Late 2025–Early 2026)
+
+## Executive Summary
+
+I'll conduct a comprehensive search of the current ransomware threat landscape to identify emerging actors, operational shifts, and law enforcement impacts from late 2025 through early 2026.
+
+Let me continue searching for information on specific emerging groups, law enforcement actions, and targeting trends.
+
+Now I have comprehensive information. Let me compile this into a structured threat analyst report.
+
+# Modern Ransomware Landscape: Threat Actor Analysis (Late 2025–Early 2026)
+
+## Executive Summary
+
+
+
+The ransomware threat landscape reached unprecedented levels in 2025, with publicly reported attacks rising to 7,200 compared to 4,900 in 2024—a 47% increase—and ending the year with 7,515 claimed victims at an average rate of 145 new victims weekly
+
+. However, this surge occurred amidst a fundamental ecosystem restructuring characterized by extreme fragmentation, declining ransom payments, and accelerated threat actor adaptation.
+
+
+
+In 2025, 57 new ransomware groups and 27 new extortion groups emerged, bringing the total number of distinct active groups to 124—a 46% increase from 2024 and the highest number ever recorded in a single year
+
+. 
+
+This fragmentation followed law enforcement disruptions of major operations such as LockBit and ALPHV/BlackCat, with 45 newly observed groups emerging throughout 2025, including 14 new groups beginning to publish victims in Q3 alone
+
+.
+
+
+
+Despite the 47% increase in attack volume, ransomware groups made less money in 2025 than in 2024, both in overall payments and average payment size, driving groups to expand and evolve their tactics
+
+. 
+
+Recorded Future predicts 2026 will mark the first year that new ransomware actors operating outside Russia outnumber those within it, reflecting the rapid globalization of the ransomware ecosystem
+
+.
+
+---
+
+## 1. Emerging and Newly Prominent Threat Groups (Mid-2025 to Early 2026)
+
+### 1.1 Qilin (Agenda) — The Dominant Force
+
+**First Observed:** 2022 (as Agenda)  
+**Prominence Period:** April 2025–Present  
+**Current Status:** Active, most prolific group globally
+
+#### Origin and Evolution
+
+
+Qilin (formerly "Agenda") emerged as the most dominant ransomware operation in 2025, claiming 701 victims by October—already surpassing RansomHub's 547 victims across all of 2024. The Russia-based group first appeared in 2022, gained traction in 2023 with 45 attack claims, rose to 179 in 2024, before quadrupling in 2025
+
+.
+
+
+
+Qilin claimed the top spot in April 2025 and maintained it ever since, mounting 1,138 successful ransomware breaches for the year, including 190 victims in December and 115 in January 2026
+
+.
+
+#### Notable Campaigns and Victims
+
+
+The group's 17 healthcare attacks in just the first week of January 2026 signal ongoing focus on medical organizations. Qilin disrupted British pathology firm Synnovis in 2024, forcing thousands of NHS appointment cancellations and creating blood supply shortages. The Covenant Health breach in May 2025 exposed 478,000 patient records across facilities in six states
+
+.
+
+
+
+Qilin launched its 'Korean Leak' campaign against South Korea-based financial institutions, underscoring continued focus on data-rich sectors
+
+.
+
+#### TTPs Summary
+
+
+Qilin operates as a traditional RaaS platform, providing affiliates with encryption tools and infrastructure in exchange for a cut of ransom payments. The model works: averaging 75 victims per month in Q3 2025, Qilin doubled its attack rate from earlier in the year
+
+.
+
+
+
+Qilin's affiliates range from state-sponsored North Korean threat actors (Moonstone Sleet) to members of Scattered Spider, as well as Devman and Arkana. Qilin has been absorbing affiliates from disrupted groups like LockBit and ALPHV/BlackCat, and its administrators are innovating by introducing legal intimidation tactics via a "call lawyer" feature
+
+.
+
+
+
+Qilin ranks among the top ransomware groups of 2025 with over 300 claimed victims, positioning itself to fill the vacuum left by defunct groups like LockBit and BlackCat. Its payloads, written in Rust and C, are supported by advanced features such as Safe Mode execution, automated negotiation tools, and network propagation capabilities
+
+.
+
+#### Suspected Affiliations
+
+
+Qilin averaged around 75 victims per month in Q3 2025, up from 36 in Q1 prior to RansomHub's closure in April, and is one of the most aggressive in recruiting former RansomHub affiliates
+
+.
+
+**Analyst Assessment:** Qilin represents the consolidation phase following ecosystem fragmentation. Its success stems from reliable infrastructure, aggressive affiliate recruitment, and willingness to target all sectors including healthcare. The group's integration of nation-state actors as affiliates (Moonstone Sleet) blurs traditional cybercrime/espionage boundaries. Expect continued dominance into 2026, though expanding operations at this scale increases law enforcement targeting risk.
+
+---
+
+### 1.2 Sinobi — The Rapid Ascender
+
+**First Observed:** Mid-June 2025  
+**Prominence Period:** July–October 2025  
+**Current Status:** Active
+
+#### Origin and Evolution
+
+
+The Sinobi ransomware brand emerged in mid-2025 and quickly distinguished itself through calculated intrusions, disciplined operational security and professional structure revealing highly skilled and well-connected operators. As of September 2025, reporting indicated approximately 40 known victims, suggesting steady activity and an organized extortion pipeline
+
+.
+
+
+
+Emerging in late June 2025, Sinobi rapidly ascended among active global operations within two months through exceptionally fast operational growth. Sinobi traces technical lineage through INC Ransomware from August 2023, whose source code was sold for $300,000 on underground forums in spring 2024 and subsequently acquired by Lynx operators in July 2024
+
+.
+
+#### Notable Campaigns
+
+
+July 2025 marked initial expansion with over 10% of observed cases. August 2025 brought peak activity with over half of quarterly operations concentrated in this period, positioning behind Qilin and Akira. September saw tempo reduction with clustering patterns including single-day spikes, though operations through October 2025 maintain active status
+
+.
+
+
+
+Sinobi resurged in October 2025 after a brief lull, recording 61 new incidents targeting U.S. construction, healthcare, and manufacturing sectors. After an early surge in August and brief cooldown in September, Sinobi resurged sharply in October 2025, signaling renewed affiliate activity and sustained operational capability
+
+.
+
+#### TTPs Summary
+
+
+Sinobi operates under a closed, hybrid RaaS model. A small core team maintains the ransomware codebase, infrastructure, negotiation portals, and financial operations, while carefully vetted affiliates conduct intrusions. Unlike open RaaS ecosystems, Sinobi does not publicly recruit affiliates, favoring operational security and trust over rapid expansion
+
+.
+
+
+
+The operation draws on compromised SonicWall SSL VPN credentials through CVE-2024-53704 exploitation, combines Curve-25519 cryptography with AES-128-CTR encryption preventing file recovery, and runs Tor-based leak infrastructure across nine active hidden services operational through October 2025
+
+.
+
+
+
+Sinobi operations are notable for quiet intrusions, modular tooling, selective targeting, and strong emphasis on both stealth and leverage. The group is known for extensive, sophisticated use of living-off-the-land (LotL) and living-off-the-land binaries (LOLBins)
+
+.
+
+#### Target Profile
+
+
+Operating through suspected RaaS infrastructure with nearly all victims (92%) in the United States, the group targets mid-market organizations with $10-50 million annual revenue across construction, manufacturing, and healthcare sectors. Manufacturing bears highest sector risk at more than double the second-highest sector, followed by construction as secondary priority
+
+.
+
+**Analyst Assessment:** Sinobi's rapid maturation suggests either rebrand of established operators (likely Lynx) or recruitment of highly experienced affiliates. The closed recruitment model and sophisticated tradecraft distinguish it from volume-focused operations. The strategic focus on mid-market targets in the $10-50M revenue range demonstrates refined targeting: substantial ransom capability without enterprise-grade security. Likely to remain significant threat through 2026, particularly to US mid-market manufacturing and construction.
+
+---
+
+### 1.3 DragonForce — The Ransomware Cartel
+
+**First Observed:** 2023  
+**Prominence Period:** March 2025–Present (Cartel model launched)  
+**Current Status:** Active
+
+#### Origin and Evolution
+
+
+DragonForce, a RaaS group first observed in 2023, rose to greater prominence in 2025 after a series of notable attacks linked to the group. Despite its unclear origins, what is evident is its rapid evolution and its aggressive, affiliate-driven model, marking it as a rising threat to watch
+
+.
+
+
+
+DragonForce rose sharply in 2025 by changing how ransomware operations are structured. Instead of a classic RaaS model, the group shifted to a decentralized cartel approach. Affiliates were allowed to run their own branding and binaries while relying on DragonForce infrastructure, making attribution harder and reducing law enforcement impact
+
+.
+
+#### Cartel Business Model Innovation
+
+
+In this model, DragonForce provides its infrastructure and tools but doesn't require affiliates to deploy its ransomware. Advertised features include administration and client panels, encryption and ransom negotiation tools, a file storage system, a Tor-based leak site and .onion domain, and support services. This approach differentiates DragonForce from other RaaS offerings and may appeal to a range of affiliates
+
+.
+
+
+
+In March 2025, the group announced the formation of a so-called "Ransomware Cartel", a framework designed to offer affiliates greater autonomy and brand control. Through a "white label" model, affiliates can leverage DragonForce infrastructure while operating under their own custom names and branding
+
+.
+
+#### RansomHub Takeover
+
+
+The chain of events following RansomHub's downtime led to "affiliate unrest," with DragonForce claiming on the RAMP forum that RansomHub "decided to move to our infrastructure" under a new "DragonForce Ransomware Cartel." Another RaaS actor called BlackLock is also assessed to have started collaborating with DragonForce after the latter defaced its data leak site in late March 2025
+
+.
+
+
+
+In addition to being linked to several attacks, DragonForce announced its evolution to a ransomware "cartel," and unveiled a new "data analysis service" for its affiliates. On August 23, 2025, DragonForce introduced a "data analysis service" designed to assist affiliates and pressure victims, functioning as a risk audit generating materials such as extortion call scripts, drafts of letters to management, and pseudo legal analysis reports
+
+.
+
+#### Scattered Spider Connection
+
+
+Scattered Spider threat actors typically engage in data theft for extortion and use several ransomware variants, most recently deploying DragonForce ransomware alongside their usual TTPs. Where more recent incidents are concerned, Scattered Spider threat actors may have deployed DragonForce ransomware onto targeted organizations' networks—encrypting VMware ESXi servers
+
+.
+
+**Analyst Assessment:** DragonForce's "cartel" model represents significant RaaS evolution—reducing single points of failure while expanding revenue streams. The white-label approach complicates attribution and dilutes law enforcement targeting effectiveness. Integration with Scattered Spider operations demonstrates sophisticated threat actor collaboration. The "data analysis service" shows continued professionalization and commoditization of extortion techniques. Expect continued growth and innovation through 2026, though decentralized model may create quality control challenges.
+
+---
+
+### 1.4 INC Ransom — The Healthcare Scourge
+
+**First Observed:** July 2023  
+**Prominence Period:** 2024–2025  
+**Current Status:** Active
+
+#### Origin and Evolution
+
+
+INC Ransom emerged independently in July 2023, distinguishing itself from typical ransomware groups that splinter from established predecessors. INC Ransom listed 162 victims in 2024 and more than 300 victims in 2025
+
+.
+
+
+
+In July 2025, INC was the most deployed ransomware based on the number of victims posted. In 2024, researchers reported that INC's source code was offered for sale on underground forums
+
+.
+
+#### Distinguishing Characteristics
+
+
+From the outset, the group positioned itself as a "service" to victims, claiming that by revealing their attack methods in exchange for ransom payment, they were actually improving their victims' security posture. This cynical framing—presenting extortion as a security service—represents a new level of psychological manipulation in ransomware operations
+
+.
+
+
+
+INC Ransom changed the calculus by abandoning traditional prohibitions against attacking healthcare, education, and government targets
+
+.
+
+#### Target Profile
+
+
+Based on 89 attack claims in the first half of 2025, healthcare organizations remain the primary target, accounting for 29% of attacks. This sector's critical patient care dependencies create urgent payment pressure. Manufacturing ranks second at 10% of incidents, as operational disruptions can cripple supply chains. Educational institutions face persistent targeting at 9% of attacks
+
+.
+
+#### TTPs Summary
+
+
+INC Ransom operates as GOLD IONIC according to MITRE ATT&CK tracking, with documented partnerships including Storm-0494 for initial access provision through GootLoader infections. Microsoft Threat Intelligence tracks significant affiliate activity through Vanilla Tempest, which adopted INC Ransom as their primary payload in August 2024
+
+.
+
+
+
+Threat actors deploying INC ransomware have exploited vulnerabilities in SimpleHelp RMM (CVE-2024-57726, CVE-2024-57727, CVE-2024-57728) that permit privilege escalation and remote code execution. CVE-2024-57727 was added to the CISA KEV in February 2025 and observed in INC ransomware activity
+
+.
+
+#### Code Proliferation
+
+
+Upon close examination of INC and Lynx ransomware samples, the overall matched functions stand at 48%, indicating that nearly half of the functions present in INC ransomware are also used in Lynx. The percentage of matched functions rises to 70.8% when considering functions common to both ransomware families
+
+.
+
+**Analyst Assessment:** INC Ransom's willingness to target healthcare without restriction marks departure from previous ransomware "ethics." The source code sale and subsequent proliferation (Lynx, Sinobi lineage) demonstrates how one group's tooling seeds multiple successor operations. Expect continued healthcare targeting through 2026, with increased law enforcement and regulatory attention potentially forcing operational changes or rebranding.
+
+---
+
+### 1.5 The Gentlemen — Operationally Mature Newcomer
+
+**First Observed:** Q3 2025 (possibly earlier operations)  
+**Prominence Period:** July–December 2025  
+**Current Status:** Active
+
+#### Origin and Technical Sophistication
+
+
+The Gentlemen emerged as one of the most operationally mature ransomware operations of 2025. Reporting suggests activity across more than a dozen countries and describes sophisticated behaviors including use of legitimate admin tooling and Group Policy manipulation. Their tradecraft resembles seasoned operators rather than new entrants, indicating potential rebranding from earlier ecosystems or recruitment of experienced affiliates
+
+.
+
+
+
+The Gentlemen were first widely noticed in Q3 2025, though investigations suggest operations may have started earlier. One early victim: JN Aceros (Peru) compromised as early as June 30, 2025. The group continues activity into late 2025, with reports of high-impact disruptions including a Romanian energy provider incident in late December
+
+.
+
+#### Operational Scale
+
+
+The group has claimed 63 victims and has been reported to have operated across 17+ countries, with geographically diverse footprint including Europe, Latin America, and Asia
+
+.
+
+
+
+The Gentlemen emerged in July 2025 and rapidly became one of the year's most dangerous new operations, with 48+ victims in just their first two months. The group distinguished itself through advanced detection evasion using the ThrottleStop.sys driver (exploiting CVE-2025-7771), cross-platform capabilities targeting Windows, Linux, and ESXi environments, and methodical reconnaissance with custom tools targeting specific security vendors
+
+.
+
+**Analyst Assessment:** The Gentlemen's mature tradecraft from inception strongly suggests rebrand/reconstitution by experienced operators rather than genuinely new entrant. Rapid victim accumulation and geographic diversity indicate substantial affiliate network or highly effective core team. Cross-platform capabilities and sophisticated evasion techniques position this as tier-1 threat. Monitor for connections to disbanded 2024-era operations.
+
+---
+
+### 1.6 SafePay — Volume-Focused Aggressor
+
+**First Observed:** September 2024  
+**Prominence Period:** 2025  
+**Current Status:** Active
+
+
+
+SafePay Ransomware became one of the most active ransomware groups of 2025, adding more than 340 victims to its leak site within a single year. First observed around September 2024, SafePay moved quickly from a low-profile operation to a high-volume threat actor
+
+.
+
+
+
+SafePay's rise into the Top 10 ransomware groups is driven by scale rather than innovation. While its techniques rely on familiar tools such as PowerShell, Mimikatz, RDP, WinRAR, and Rclone, the group compensates with aggressive operations, fast execution, and consistent victim listings. In 2025, SafePay stood out not for novel malware design but for its ability to sustain pressure across hundreds of organizations
+
+.
+
+
+
+Unlike many competitors, the group does not appear to rely on a classic RaaS model. The same core operators seem to manage intrusion, encryption, and extortion, giving SafePay tighter control over campaigns and victim handling
+
+.
+
+---
+
+### 1.7 Scattered Spider / Lapsus$ / ShinyHunters — Social Engineering Masters
+
+**First Observed:** 2022  
+**Prominence Period:** Continuous, expanded 2025  
+**Current Status:** Highly Active
+
+
+
+Scattered Spider is a native English-speaking cybercriminal group active since at least 2022. The group initially targeted CRM providers, BPO firms, and telecommunications companies before expanding in 2023 to gaming, hospitality, retail, MSP, manufacturing, and financial sectors
+
+.
+
+#### 2025 Campaign Evolution
+
+
+Throughout Q2 2025, Scattered Spider's activities primarily centered on U.S.-based insurance and retail entities, along with U.K.-based retail entities. However, incidents in late June 2025, specifically targeting U.S.-based airlines, demonstrated TTPs consistent with the adversary's previous operations
+
+.
+
+
+
+Early in 2025, attacks on large UK retailers brought Scattered Spider to public attention. Cyberattacks targeted British high street chains in April, including Marks & Spencer, the Co-op, and Harrods. In the UK, M&S experienced suspension of online orders, contactless payments not working, and empty shelves. Investigators verified attacks were carried out through highly targeted social engineering and ended with deployment of DragonForce ransomware
+
+.
+
+#### TTPs Summary
+
+
+Scattered Spider relies heavily on social engineering, including impersonating IT and help-desk staff, to gain initial access, bypass MFA, and compromise enterprise networks. The group has adapted its tooling to evade EDR defenses and used ransomware for financial gain
+
+.
+
+
+
+The group primarily leverages phishing frameworks like Evilginx and social engineering methods like vishing to gain initial access. 70% of Scattered Spider's targets belong to technology, finance, and retail trade sectors. Scattered Spider and DragonForce increasingly target MSPs and IT contractors, exploiting their "one-to-many" access
+
+.
+
+#### Law Enforcement Actions
+
+
+On December 5, U.S. authorities arrested Remington Goy Ogletree, a 19-year-old from Texas, marking the seventh arrest of a Scattered Spider member
+
+.
+
+**Analyst Assessment:** Scattered Spider represents evolution beyond traditional ransomware: sophisticated social engineering combined with technical skill, native English speakers enabling more effective help desk targeting, and flexible partnership model working with multiple ransomware operations. The group's targeting of MSPs creates cascade effects. Despite arrests, operational tempo remains high. Expect continued adaptation and possibly fragmentation as law enforcement pressure increases.
+
+---
+
+## 2. RaaS Ecosystem Evolution
+
+### 2.1 Affiliate Migration Patterns
+
+
+
+Takedown operations primarily target RaaS infrastructure and administrators, which does not affect affiliate operators who conduct intrusions and drive operational execution. When a major RaaS platform is disrupted, these affiliates typically migrate to alternative programs or establish their own data-leak sites, resulting in only short-term interruptions. The effects of affiliate mobility are evident in the proliferation of new leak sites and rising activity of existing groups. Qilin averaged around 75 victims per month in Q3 2025, up from 36 in Q1 prior to RansomHub's closure in April
+
+.
+
+### 2.2 New Business Models
+
+
+
+In 2025, Secureworks researchers observed DragonForce and Anubis ransomware operators introducing novel models to attract affiliates. Anubis offers three modes: traditional RaaS (80% to affiliates), data ransom/theft-only extortion (60% to affiliates), and accesses monetization helping threat actors extort victims they've already compromised (50% to affiliates)
+
+.
+
+
+
+Fees vary: some charge flat monthly rates, others require significant upfront licensing fees, and many adopt revenue-sharing models where affiliates remit 20-40% of each successful ransom payout. DragonForce is popular due to its particularly low profit share requirements
+
+.
+
+### 2.3 Declining Payment Success
+
+
+
+While attack volumes have soared, ransom payment rates have plummeted to historic lows of 23-25%, forcing threat actors to reimagine their business models and extortion tactics fundamentally
+
+.
+
+
+
+With affiliates earning less and many ransomware operators abandoning the RaaS model to operate independently, remaining RaaS operations must offer more value to attract and retain affiliates
+
+.
+
+---
+
+## 3. Major Law Enforcement Operations (2025)
+
+### 3.1 Operation Checkmate — BlackSuit/Royal Takedown (July 2025)
+
+
+
+An operation by U.S. law enforcement in coordination with international partners successfully seized servers, domains, and digital assets used by the BlackSuit Ransomware group to deploy ransomware, extort victims, and launder proceeds. Approximately $1,091,453 in virtual currency was seized by the U.S. Attorney's Office for the District of Columbia
+
+.
+
+
+
+A DoJ announcement on August 11, 2025, explained that laundered cryptocurrency valued at $1,091,453 had been seized as part of the operation, along with four servers and nine domains
+
+.
+
+### 3.2 LockBit Continued Disruption (2024-2025)
+
+
+
+On February 20, 2024, the UK's National Crime Agency took control of LockBit's site as part of Operation Cronos. The NCA claimed to have compromised LockBit's entire backend infrastructure, unmasked members of the gang's leadership, and seized cryptocurrency and decryption keys. The LockBit takedown, following similar operations against Hive, RagnarLocker and AlphV at the end of 2023, raised hopes law enforcement might be turning the tide
+
+.
+
+
+
+LockBit demonstrated remarkable resilience, resurfacing after being disrupted by Operation Cronos in early 2024 and reemerging with LockBit 5.0 (also called "ChuongDong") in September 2025. Taken down by law enforcement in 2024, LockBit resurfaced in September 2025
+
+.
+
+### 3.3 Additional 2024-2025 Actions
+
+
+
+In May 2024, Europol announced Operation Endgame, a multiagency effort targeting developers and distributors of 'malware droppers.' Endgame resulted in the takedown of 100 servers and over 2,000 domains linked to the illicit dropper market. Four individuals were arrested, one of whom earned at least $70 million through renting out infrastructure for ransomware attacks
+
+.
+
+
+
+On October 1, 2024, authorities arrested four individuals linked to the LockBit ransomware gang, including a developer, a bulletproof hosting service administrator, and two other affiliates. This followed formal sanctions imposed by the U.S. Treasury Department on LockBit members
+
+.
+
+### 3.4 Observable Impact Assessment
+
+
+
+Takedown operations primarily target RaaS infrastructure and administrators, which does not affect affiliate operators who conduct intrusions and drive operational execution. When a major RaaS platform is disrupted, these affiliates typically migrate to alternative programs or establish their own data-leak sites, resulting in only short-term interruptions to overall activity levels. The effects of affiliate mobility are evident in the proliferation of new leak sites and rising activity of existing groups
+
+.
+
+
+
+The benefits of law enforcement takedowns shouldn't be underestimated, even if principally felt only in the short term. They force cybercriminals to reconstitute infrastructure and reputation at significant cost, sparing potential victims during forced downtime. They also seed friction within cybercriminal communities who rely on assured anonymity. Compromising backend infrastructure sows distrust between RaaS groups and affiliates
+
+.
+
+
+
+After international authorities dismantled infrastructure tied to prominent groups like LockBit in early 2025, fragments of the operation resurfaced under new names, continuing to target vulnerable organizations. Enforcement wins often targeted visible infrastructure rather than elusive human networks behind it, allowing perpetrators to regroup and strike again
+
+.
+
+**Analyst Assessment:** Law enforcement achieved tactical successes but strategic impact remains limited. The affiliate model's resilience enables rapid reconstitution. However, sustained pressure increases operational costs, forces rebranding cycles, and creates trust deficits. Notable shift: increased focus on ecosystem enablers (droppers, money laundering, access brokers) rather than just ransomware operators themselves. This "ecosystem disruption" approach shows more promise than infrastructure takedowns alone.
+
+---
+
+## 4. Industry and Geographic Targeting Trends
+
+### 4.1 Sector Targeting
+
+
+
+The manufacturing sector was the most heavily targeted, accounting for 14% of attacks, followed by the technology sector (9%), and retail/wholesale (7%). Healthcare ranked in fourth spot, with more than 500 victims in 2025
+
+.
+
+
+
+Profit-oriented organizations with high downtime costs, such as industrial manufacturing, and those holding sensitive or regulated data, such as business services, remained the most targeted sectors, each representing approximately 10% of all extortion attempts. Healthcare and medical organizations continue to face steady targeting due to the critical nature of their operations and the sensitivity of stored information
+
+.
+
+
+
+Healthcare faces targeting due to sensitive patient data and high operational pressure. Education, especially distributed campus networks with limited IT staffing, faces risk. Manufacturing, where downtime directly impacts revenue, remains a top target. Public sector and critical infrastructure face attacks where service disruption has national and public safety implications
+
+.
+
+### 4.2 Geographic Distribution
+
+
+
+Ransomware actors primarily focus on the United States, where 55% of attacks were conducted in 2025, followed by Canada accounting for 4.5% of attacks. Other lucrative areas include Canada, Germany, the UK, Italy, France, and Australia
+
+.
+
+
+
+In June 2025, the United States remained the primary target of ransomware attacks, recording 235 victims, far surpassing other nations. Canada (24), the United Kingdom (24), Germany (15), and Israel (13) also experienced notable activity
+
+.
+
+### 4.3 Emerging Trends: Critical Infrastructure Focus
+
+
+
+Among newly emerged ransomware groups, Cyble observed heightened attacks on critical infrastructure industries, especially in Government & LEA and Energy & Utilities, by groups such as Devman, Sinobi, Warlock, and Gunra
+
+.
+
+
+
+Data from threat intelligence trackers showed that ransomware attacks against critical infrastructure—including energy, transportation, and manufacturing—rose by around 34% compared to the previous year
+
+.
+
+---
+
+## 5. Tactical Adaptations and Emerging TTPs
+
+### 5.1 Beyond Double Extortion
+
+
+
+One of the most important changes in 2026 is the growing use of data-only extortion. Instead of encrypting systems, attackers focus on data theft. This approach reduces the time and technical effort required to deploy full ransomware payloads. It also puts organizations under immediate legal, compliance, and reputational pressure, even if systems remain operational. In 2025, double extortion became common; in 2026, many groups will skip encryption entirely
+
+.
+
+
+
+In 2025, double extortion became common, where attackers encrypted systems and stole data. In 2026, many groups will skip encryption entirely
+
+.
+
+### 5.2 Insider Recruitment and Gig Worker Exploitation
+
+
+
+With stolen credentials, vulnerability exploitation, and phishing still dominating initial access, ransomware operators are increasingly turning to native English speakers to recruit corporate insiders—a trend likely to accelerate if layoffs continue into 2026. Private reporting indicates that insider recruitment attempts increased significantly throughout 2025 and will likely continue growing
+
+.
+
+
+
+According to a recent FBI advisory, ransomware groups have begun exploiting gig work platforms to carry out attacks when remote methods fail. In one documented case, an attacker successfully executed a social engineering help desk scam but couldn't install their tools remotely due to security controls
+
+.
+
+### 5.3 AI Integration
+
+
+
+There is growing evidence that ransomware groups are incorporating AI into their operations, most commonly for social engineering to overcome language barriers, personalize social engineering, and craft contextually appropriate lures that bypass traditional detection methods
+
+.
+
+
+
+Agentic AI can reason, plan, and act autonomously, adapting attacks in real time and learning from defenders faster than they can respond. In controlled testing, AI-driven ransomware achieved full data exfiltration 100 times faster than human attackers
+
+.
+
+### 5.4 Cross-Platform Targeting
+
+
+
+Global stands out for its emphasis on cross-platform capability—including support for Linux and ESXi alongside Windows. Cross-platform ransomware is becoming the default—not the exception
+
+.
+
+
+
+Virtualized infrastructure gives attackers the highest ROI per intrusion. Credential access brokers are expected to expand further in 2026
+
+.
+
+### 5.5 Supply Chain Exploitation
+
+
+
+Supply chain attacks nearly doubled in 2025, as Cyble dark web researchers recorded 297 supply chain attacks claimed by threat groups in 2025, up 93% from 154 such events in 2024
+
+.
+
+
+
+Several newly emerged groups targeted the software supply chain, among them RALord/Nova, Warlock, Sinobi, The Gentlemen, and BlackNevas, with a particular focus on the IT & ITES, Technology, and Transportation & Logistics sectors
+
+.
+
+### 5.6 Living Off the Land and EDR Evasion
+
+
+
+Other threat actors, notably LockBit, use Living off the Land (LOTL) tactics to infiltrate networks with legitimate tools and management software already in place. As no malware files are deployed, it becomes increasingly difficult to detect these attacks in motion and threat actors can sit undetected for weeks or even months
+
+.
+
+---
+
+## 6. The RansomHub Saga: A Case Study in Ecosystem Flux
+
+### 6.1 Rapid Rise (February 2024 – March 2025)
+
+
+
+RansomHub became one of the most visible ransomware operations of 2025 by scaling at an unusually rapid pace. In a short time frame, the group added more than 230 victims to its leak site, which placed it among the most active ransomware groups of the year. This rapid expansion was striking because it occurred while the group was still establishing itself as a relatively new actor in the ecosystem
+
+.
+
+
+
+RansomHub, which first emerged in February 2024, is estimated to have stolen data from over 200 victims. It replaced two high-profile RaaS groups, LockBit and BlackCat, to become a frontrunner, courting their affiliates including Scattered Spider and Evil Corp with lucrative payment splits
+
+.
+
+### 6.2 Sudden Collapse (April 2025)
+
+
+
+RansomHub's operations abruptly halted in April 2025 under circumstances that remain unclear. On April 1, 2025, security researchers observed that RansomHub's client communication portal had gone offline. Speculation suggested a dispute may have arisen between RansomHub's core members and its affiliates, with some researchers believing certain members defected to Qilin
+
+.
+
+
+
+PRODAFT reported that RansomHub's operations stalled at the start of April due to "many members leaving," a sign the RaaS syndicate may be shutting down or readying for a rebrand. Around the same time, DragonForce announced the formation of a ransomware cartel. Some threat actors affiliated with RansomHub joined other groups. The VanHelsing ransomware group was created by former RansomHub affiliates, while others started using different ransomware variants. RansomBay is now running on DragonForce systems
+
+.
+
+### 6.3 Affiliate Redistribution
+
+
+
+In early April 2025, RansomHub, the dominant RaaS group that filled the vacuum left by LockBit's decline in early 2024, abruptly ceased operations. With RansomHub's data leak site offline, its affiliates, who had been averaging around 75 listed victims per month, were left seeking a new platform. Many of them appear to have shifted their operations to Qilin, which nearly doubled its activity in Q2 2025, jumping from an average of 35 victims per month to almost 70
+
+.
+
+**Analyst Assessment:** RansomHub's rapid rise and sudden collapse epitomizes ecosystem volatility. The speed of affiliate redistribution to Qilin and DragonForce demonstrates maturity of RaaS marketplace: affiliates operate as free agents, platform loyalty is transactional. Internal disputes or law enforcement pressure (nature of collapse remains unclear) can instantly reshape threat landscape. Expect continued M&A-like activity, hostile takeovers, and rapid brand cycling through 2026.
+
+---
+
+## 7. Key Intelligence Gaps and Uncertainties
+
+1. **RansomHub Collapse**: Precise cause remains unknown (internal dispute, law enforcement, technical failure, or exit scam)
+2. **Sinobi-Lynx-INC Relationship**: Exact nature of code lineage and whether shared operators or pure code sale
+3. **State Actor Integration**: Full extent of nation-state (DPRK, China, Russia) use of cybercriminal ransomware infrastructure
+4. **Payment Flows**: Accurate financial data obscured by underreporting and cryptocurrency mixing
+5. **DragonForce Cartel Scale**: True number of affiliates/sub-brands operating under umbrella model
+
+---
+
+## 8. 2026 Outlook and Strategic Assessment
+
+### 8.1 Fragmentation Will Persist
+
+
+
+The era of mega-syndicates dominating the market is fading. Today's threat is defined by smaller, agile crews. Ransomware is evolving into a repeatable business process, where playbooks matter more than innovation
+
+.
+
+
+
+Where 2025 still featured a handful of recognizable ransomware brands, 2026 is defined by fragmentation. New strains appear frequently, affiliates shift platforms quickly, and attribution has become harder for defenders and law enforcement alike
+
+.
+
+### 8.2 Identity Compromise Will Dominate
+
+
+
+Identity compromise outpaces vulnerability exploitation as the dominant initial access method. VPNs, remote admin tools, cloud accounts, and exposed credentials are already the leading ransomware entry points. Credential access brokers will expand further in 2026
+
+.
+
+
+
+Credential-based intrusions, accounting for nearly half of initial access methods in 2025, are likely to remain dominant due to the scalability of credential theft and persistent weaknesses in remote authentication
+
+.
+
+### 8.3 Geographic Diversification
+
+
+
+Recorded Future predicts 2026 will mark the first year that new ransomware actors operating outside Russia outnumber those within it. This doesn't indicate a decline in Russian-based operations; instead, it reflects how dramatically the global ransomware ecosystem has expanded
+
+.
+
+### 8.4 Pressure on Profitability Will Drive Innovation
+
+
+
+With affiliates earning less and many ransomware operators abandoning the RaaS model to operate independently, remaining RaaS operations must offer more value to attract and retain affiliates. Now, with fewer ransom payments to share, RaaS operators are reintroducing premium services to maintain their affiliate networks
+
+.
+
+### 8.5 Data Extortion Without Encryption
+
+
+
+One of the most important changes in 2026 is the growing use of data-only extortion. In 2026, many groups will skip encryption entirely
+
+.
+
+---
+
+## 9. Priority Intelligence Requirements for Q1-Q2 2026
+
+1. **Qilin Disruption Timeline**: When will Qilin's scale trigger major law enforcement action?
+2. **DragonForce Cartel Evolution**: Which major groups/affiliates join the white-label model?
+3. **Sinobi Rebranding Indicators**: Will summer 2025 operations model sustain or rebrand?
+4. **INC Source Code Proliferation**: What additional variants/groups emerge from code base?
+5. **LockBit 5.0 Trajectory**: Can LockBit regain market position or remain diminished?
+6. **Scattered Spider Fragmentation**: How will arrests impact operational cohesion?
+7. **Payment Ban Impacts**: Effects of proposed UK public sector ransom payment bans
+
+---
+
+## 10. Consolidated Group Comparison Matrix
+
+| Group | First Seen | Status | Victims (2025) | Model | Primary Distinction |
+|-------|-----------|--------|----------------|-------|-------------------|
+| **Qilin** | 2022 | Active | 1,138 | RaaS | Dominant volume, absorbed RansomHub affiliates |
+| **Sinobi** | Jun 2025 | Active | 138 | Closed RaaS | Rapid maturation, INC lineage, mid-market focus |
+| **DragonForce** | 2023 | Active | 200+ | Cartel | White-label model, infrastructure-as-a-service |
+| **INC Ransom** | Jul 2023 | Active | 300+ | RaaS | Healthcare targeting, code proliferation |
+| **The Gentlemen** | Jul 2025 | Active | 63+ | Unknown | Operational maturity from inception, global reach |
+| **SafePay** | Sep 2024 | Active | 340+ | Core team | Volume over innovation, non-RaaS structure |
+| **RansomHub** | Feb 2024 | Defunct | 230+ | RaaS | Collapsed Apr 2025, affiliates redistributed |
+| **Scattered Spider** | 2022 | Active | Variable | Access broker | Social engineering specialists, DragonForce partner |
+| **LockBit** | 2019 | Diminished | 106 (Dec) | RaaS | Resurrected Sep 2025 as LockBit 5.0 after takedowns |
+| **Akira** | 2023 | Active | 250+ | RaaS | Persistent presence, Cisco infrastructure exploitation |
+
+---
+
+## Sources
+
+All claims in this report are cited with source indices corresponding to web search results conducted between late 2025 and February 2026, including threat intelligence from Cyble, Recorded Future, Check Point Research, GuidePoint Security, Intel 471, Sophos, Microsoft Threat Intelligence, CISA, FBI, and commercial cybersecurity vendors.
+
+---
+
+**Classification:** UNCLASSIFIED // For Official Use Only  
+**Report Date:** February 14, 2026  
+**Next Update:** Anticipated Q2 2026

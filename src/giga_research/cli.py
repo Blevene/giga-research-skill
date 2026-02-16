@@ -8,7 +8,7 @@ import json
 import sys
 from pathlib import Path
 
-from giga_research.config import ALL_PROVIDERS, CLIENT_REGISTRY, SKILL_ROOT, Config
+from giga_research.config import ALL_PROVIDERS, CLIENT_REGISTRY, Config
 
 
 def _cli_error(message: str) -> None:
@@ -143,8 +143,8 @@ def main(argv: list[str] | None = None) -> None:
     create_session_p.add_argument("--topic", required=True, help="Topic slug for the session directory name")
     create_session_p.add_argument(
         "--output-dir",
-        default=str(SKILL_ROOT / "research-output"),
-        help="Base output directory (default: <skill-root>/research-output)",
+        default=str(Path.cwd() / "research-output"),
+        help="Base output directory (default: ./research-output in current working directory)",
     )
 
     research_p = sub.add_parser("research", help="Run research on a single provider")

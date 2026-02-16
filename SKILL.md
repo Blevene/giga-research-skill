@@ -162,7 +162,7 @@ After the user approves the prompt:
    ```bash
    uv run --project <SKILL_ROOT> giga-research create-session --topic "<topic-slug>"
    ```
-   This prints the absolute session directory path.
+   This creates `./research-output/<timestamp>-<slug>/` in the **current working directory** (i.e., where the main agent is running) and prints the absolute session path.
 5. Save the approved prompt to `<session-dir>/prompt.md`.
 6. Ask the user for citation validation depth (0-3):
    - **0** — No validation (default, fastest)

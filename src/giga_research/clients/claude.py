@@ -11,7 +11,8 @@ from giga_research.config import Config
 from giga_research.errors import ProviderError
 from giga_research.models import Citation, ResearchResult, ResultMetadata
 
-_MODEL = "claude-sonnet-4-5-20250929"
+_MODEL = "claude-sonnet-4-6"
+_BETA = "code-execution-web-tools-2026-02-09"
 
 
 class ClaudeClient(BaseResearchClient):
@@ -35,11 +36,12 @@ class ClaudeClient(BaseResearchClient):
 
         start = time.monotonic()
         try:
-            message = await self._client.messages.create(
+            message = await self._client.beta.messages.create(
                 model=_MODEL,
                 max_tokens=16384,
+                betas=[_BETA],
                 messages=[{"role": "user", "content": prompt}],
-                tools=[{"type": "web_search_20250305", "name": "web_search", "max_uses": 20}],
+                tools=[{"type": "web_search_20260209", "name": "web_search"}],
                 system=(
                     "You are a thorough research assistant with web search capabilities. "
                     "Use web search extensively to find current, accurate information. "

@@ -17,7 +17,7 @@ Each provider uses its native deep research capability:
 
 | Provider | API | Model |
 |----------|-----|-------|
-| Claude | Messages API + Web Search | claude-sonnet-4-5-20250929 |
+| Claude | Messages API + Web Search | claude-sonnet-4-6 |
 | OpenAI | Responses API (background) | o3-deep-research |
 | Gemini | Interactions API (background) | deep-research-pro-preview-12-2025 |
 

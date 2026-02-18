@@ -267,7 +267,8 @@ src/giga_research/
 │   ├── openai_client.py    # OpenAI Responses API (deep research)
 │   └── gemini.py           # Google Interactions API (deep research)
 ├── research/
-│   ├── dispatcher.py       # Parallel asyncio.gather dispatch
+│   ├── dispatcher.py       # Parallel dispatch with streaming callbacks
+│   ├── progress.py         # Progress event dataclasses + callback type
 │   └── collector.py        # Session directory + file management
 ├── validation/
 │   ├── url_checker.py      # HTTP liveness + content fetch
@@ -299,7 +300,7 @@ src/giga_research/
 uv run pytest -v
 ```
 
-91+ tests covering all modules. Tests mock external API calls — no API keys needed to run the suite.
+104 tests covering all modules. Tests mock external API calls — no API keys needed to run the suite.
 
 ### Lint and format
 

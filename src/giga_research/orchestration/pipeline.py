@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import importlib
+import sys
+import time
 from pathlib import Path
 
 from pydantic import BaseModel
@@ -21,6 +23,13 @@ from giga_research.reconciliation.report_builder import (
 )
 from giga_research.research.collector import save_result_to_file, save_session_metadata
 from giga_research.research.dispatcher import dispatch_research
+from giga_research.research.progress import (
+    ProgressCallback,
+    ProgressEvent,
+    ProviderCompleted,
+    ProviderFailed,
+    ProviderStarted,
+)
 from giga_research.validation.citations import validate_citations
 
 
@@ -54,6 +63,28 @@ def _build_clients(config: Config) -> list[BaseResearchClient]:
                 continue
             raise
     return clients
+
+
+def _make_progress_printer() -> ProgressCallback:
+    """Return a callback that prints progress events to stderr with elapsed time."""
+    t0 = time.monotonic()
+
+    def _print(event: ProgressEvent) -> None:
+        elapsed = time.monotonic() - t0
+        if isinstance(event, ProviderStarted):
+            print(f"[{elapsed:7.1f}s] {event.provider}: started", file=sys.stderr)
+        elif isinstance(event, ProviderCompleted):
+            print(
+                f"[{elapsed:7.1f}s] {event.provider}: done in {event.latency_s:.1f}s",
+                file=sys.stderr,
+            )
+        elif isinstance(event, ProviderFailed):
+            print(
+                f"[{elapsed:7.1f}s] {event.provider}: FAILED — {event.error}",
+                file=sys.stderr,
+            )
+
+    return _print
 
 
 async def run_pipeline(
@@ -90,11 +121,12 @@ async def run_pipeline(
     prompt = prompt_file.read_text(encoding="utf-8")
 
     # 2. Dispatch research to all available providers in parallel
-    results, errors = await dispatch_research(prompt, clients)
-
-    # 3. Save each successful result to raw/<provider>.md + .json
-    for result in results.values():
-        save_result_to_file(session_dir, result)
+    results, errors = await dispatch_research(
+        prompt,
+        clients,
+        on_result=lambda r: save_result_to_file(session_dir, r),
+        on_progress=_make_progress_printer(),
+    )
 
     # 4. Extract and deduplicate citations from markdown + ResearchResult.citations
     all_citations: list[Citation] = []

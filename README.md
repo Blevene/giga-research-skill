@@ -23,6 +23,8 @@ Each provider uses its native deep research capability:
 
 Model/agent IDs are overridable via env (`CLAUDE_RESEARCH_MODEL`, `OPENAI_RESEARCH_MODEL`, `GEMINI_RESEARCH_AGENT`) — e.g. set `OPENAI_RESEARCH_MODEL=o4-mini-deep-research` for faster/cheaper OpenAI runs.
 
+> ⚠️ **OpenAI deep-research models retire 2026-12-11.** Both dedicated models (`o3-deep-research`, `o4-mini-deep-research`) shut down on that date. OpenAI's successor is the general `gpt-5.5-pro` (set `OPENAI_RESEARCH_MODEL=gpt-5.5-pro`), but its research quality through this pipeline is **not yet validated**. Validate and pick the post-deprecation default before the shutdown — tracked in [#6](https://github.com/Blevene/giga-research-skill/issues/6).
+
 ## Installation
 
 Requires Python 3.11+.

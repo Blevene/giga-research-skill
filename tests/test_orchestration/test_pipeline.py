@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from giga_research.models import Citation, ResearchResult, ResultMetadata
+from giga_research.models import Citation, ResearchResult, ResultMetadata, ValidationStatus
 from giga_research.orchestration.pipeline import PipelineResult, _build_clients, run_pipeline
 
 
@@ -189,11 +189,11 @@ async def test_depth_one_validates_citations(session_dir, config_no_keys):
         FakeClient("claude", "See [Link](https://example.com/test)."),
     ]
 
-    # Mock check_url_alive to return True without making real HTTP requests
+    # Mock probe_url to report ALIVE without making real HTTP requests
     with patch(
-        "giga_research.validation.citations.check_url_alive",
+        "giga_research.validation.citations.probe_url",
         new_callable=AsyncMock,
-        return_value=True,
+        return_value=(ValidationStatus.ALIVE, None),
     ):
         result = await run_pipeline(session_dir, depth=1, config=config_no_keys, clients=clients)
 

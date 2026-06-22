@@ -6,9 +6,15 @@ import argparse
 import asyncio
 import json
 import sys
+import warnings
 from pathlib import Path
 
-from giga_research.config import ALL_PROVIDERS, CLIENT_REGISTRY, Config
+# The Anthropic SDK emits benign Pydantic serializer warnings while handling
+# web_search responses (a code_execution caller shape its models don't fully
+# type). They don't affect output — silence the stderr noise during runs.
+warnings.filterwarnings("ignore", message="Pydantic serializer warnings", category=UserWarning)
+
+from giga_research.config import ALL_PROVIDERS, CLIENT_REGISTRY, Config  # noqa: E402
 
 
 def _cli_error(message: str) -> None:

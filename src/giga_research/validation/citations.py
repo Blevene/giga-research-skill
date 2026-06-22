@@ -5,17 +5,19 @@ from __future__ import annotations
 import asyncio
 
 from giga_research.models import Citation, ValidationStatus
-from giga_research.validation.url_checker import check_url_alive, fetch_url_content
+from giga_research.validation.url_checker import probe_url
 
 
 def _text_contains_claim(page_text: str, claim: str) -> bool:
-    """Check if a page's text contains the essence of a claim.
+    """Heuristic: do the claim's significant words (>4 chars) appear on the page?
 
-    Uses significant words from the claim (>4 chars) to check presence.
+    A weak positive signal only — used to mark VERIFIED vs UNVERIFIED, never to
+    accuse a citation of being fabricated (a missing match can mean paraphrase,
+    JS-rendered content, or a snippet/title that isn't verbatim in the body).
     """
     words = [w.lower() for w in claim.split() if len(w) > 4]
     if not words:
-        return claim.lower() in page_text.lower()
+        return bool(claim.strip()) and claim.lower() in page_text.lower()
     page_lower = page_text.lower()
     matches = sum(1 for w in words if w in page_lower)
     return matches >= len(words) * 0.6
@@ -26,26 +28,25 @@ async def _validate_one(
     depth: int,
     semaphore: asyncio.Semaphore,
 ) -> Citation:
-    """Validate a single citation at the given depth."""
+    """Validate a single citation at the given depth.
+
+    Depth 1: liveness — ALIVE / BLOCKED / DEAD.
+    Depth 2+: also fetch the body; on a live page, VERIFIED if the claim's words
+    appear, else UNVERIFIED. BLOCKED/DEAD are preserved (never downgraded to a
+    verification verdict — we can't judge a page we couldn't read).
+    """
     if not citation.url or depth == 0:
         return citation
 
     async with semaphore:
-        if depth == 1:
-            alive = await check_url_alive(citation.url)
-            return citation.model_copy(
-                update={"validation_status": ValidationStatus.ALIVE if alive else ValidationStatus.DEAD}
+        status, body = await probe_url(citation.url, fetch_body=depth >= 2)
+        if depth >= 2 and status == ValidationStatus.ALIVE and body is not None:
+            status = (
+                ValidationStatus.VERIFIED
+                if _text_contains_claim(body, citation.text)
+                else ValidationStatus.UNVERIFIED
             )
-
-        # Depth 2+: fetch content and verify claim
-        content = await fetch_url_content(citation.url)
-        if content is None:
-            return citation.model_copy(update={"validation_status": ValidationStatus.DEAD})
-
-        if _text_contains_claim(content, citation.text):
-            return citation.model_copy(update={"validation_status": ValidationStatus.VERIFIED})
-        else:
-            return citation.model_copy(update={"validation_status": ValidationStatus.HALLUCINATED})
+        return citation.model_copy(update={"validation_status": status})
 
 
 async def validate_citations(

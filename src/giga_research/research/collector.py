@@ -55,6 +55,7 @@ def save_session_metadata(
     providers_skipped: list[str],
     citation_validation_depth: int,
     results: dict[str, ResearchResult],
+    providers_failed: dict[str, str] | None = None,
 ) -> Path:
     """Save session metadata as meta.json."""
     meta = {
@@ -62,6 +63,7 @@ def save_session_metadata(
         "created_at": datetime.now(UTC).isoformat(),
         "providers_used": providers_used,
         "providers_skipped": providers_skipped,
+        "providers_failed": providers_failed or {},
         "citation_validation_depth": citation_validation_depth,
         "provider_metadata": {
             name: {

@@ -21,6 +21,7 @@ from giga_research.reconciliation.report_builder import (
     build_comparison_markdown,
     build_validation_log,
 )
+from giga_research.reconciliation.synthesizer import synthesize_report
 from giga_research.research.collector import save_result_to_file, save_session_metadata
 from giga_research.research.dispatcher import dispatch_research
 from giga_research.research.progress import (
@@ -42,6 +43,17 @@ class PipelineResult(BaseModel):
     citation_count: int = 0
     citations_validated: int = 0
     topics_identified: list[str] = []
+    report_generated: bool = False
+
+
+def _derive_topic(prompt: str, session_dir: Path) -> str:
+    """A short report title from prompt.md's first H1, else the session slug."""
+    for line in prompt.splitlines():
+        line = line.strip()
+        if line.startswith("# "):
+            heading = line[2:].strip()
+            return heading.removeprefix("Research Task:").strip() or heading
+    return session_dir.name
 
 
 def _build_clients(config: Config) -> list[BaseResearchClient]:
@@ -148,22 +160,37 @@ async def run_pipeline(
     val_log = build_validation_log(validated)
     (session_dir / "validation-log.md").write_text(val_log, encoding="utf-8")
 
+    # 7b. Synthesize the unified report.md (best-effort; one plain Claude call).
+    # Keeping synthesis here means orchestrate always emits report.md, with no
+    # need for a long-lived coordinator subagent.
+    report_generated = False
+    try:
+        report_md = await synthesize_report(config, _derive_topic(prompt, session_dir), results, matrix_md, validated)
+        if report_md:
+            (session_dir / "report.md").write_text(report_md, encoding="utf-8")
+            report_generated = True
+    except Exception as exc:  # never fail the run over synthesis
+        print(f"[pipeline] report synthesis skipped: {exc}", file=sys.stderr)
+
     # 8. Save session metadata
     providers_used = list(results.keys())
     providers_skipped = [p for p in ALL_PROVIDERS if p not in providers_used and p not in errors]
+    providers_failed = {name: str(exc) for name, exc in errors.items()}
     save_session_metadata(
         session_dir,
         providers_used=providers_used,
         providers_skipped=providers_skipped,
         citation_validation_depth=depth,
         results=results,
+        providers_failed=providers_failed,
     )
 
     return PipelineResult(
         session_dir=str(session_dir),
         providers_used=providers_used,
-        providers_failed={name: str(exc) for name, exc in errors.items()},
+        providers_failed=providers_failed,
         citation_count=len(all_citations),
         citations_validated=sum(1 for c in validated if c.validation_status != ValidationStatus.UNCHECKED),
         topics_identified=list(matrix.keys()),
+        report_generated=report_generated,
     )

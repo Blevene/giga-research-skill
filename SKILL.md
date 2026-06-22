@@ -17,16 +17,17 @@ description: >
   questions, code generation, or tasks that don't need multi-provider research.
 
   Workflow: (1) conversational prompt crafting with user approval gate,
-  (2) provider detection + session creation, (3) background coordinator
-  subagent runs full pipeline and synthesizes report. Produces: report.md,
-  comparison-matrix.md, validation-log.md, raw provider reports, meta.json.
-  Typical runtime: 5-10 minutes. Works with 1-3 providers; missing ones
-  support manual fallback via web UI.
+  (2) provider detection + session creation, (3) a self-contained background
+  pipeline run (orchestrate) that dispatches providers, validates citations,
+  and synthesizes report.md. Produces: report.md, comparison-matrix.md,
+  validation-log.md, raw provider reports, meta.json. Typical runtime: 5-10
+  minutes. Works with 1-3 providers; missing ones support manual fallback via
+  web UI.
 ---
 
 # Giga Research
 
-Orchestrate deep research across Claude, OpenAI, and Gemini in parallel. Craft a research prompt conversationally, then launch a single background coordinator that dispatches providers, validates citations, and synthesizes a unified report — all without polluting the main conversation.
+Orchestrate deep research across Claude, OpenAI, and Gemini in parallel. Craft a research prompt conversationally, then run a single self-contained background pipeline (`orchestrate`) that dispatches providers, validates citations, and synthesizes a unified `report.md` — all without polluting the main conversation.
 
 ## When to Use This Skill
 
@@ -106,14 +107,14 @@ digraph workflow {
     "Phase 1: Prompt Craft" [shape=box];
     "User approves prompt?" [shape=diamond];
     "Phase 2: Setup + Launch" [shape=box];
-    "Coordinator Subagent" [shape=box, style=filled, fillcolor=lightblue];
+    "Background: orchestrate\n(self-contained, writes report.md)" [shape=box, style=filled, fillcolor=lightblue];
     "Done" [shape=doublecircle];
 
     "Phase 1: Prompt Craft" -> "User approves prompt?";
     "User approves prompt?" -> "Phase 1: Prompt Craft" [label="revise"];
     "User approves prompt?" -> "Phase 2: Setup + Launch" [label="approved"];
-    "Phase 2: Setup + Launch" -> "Coordinator Subagent";
-    "Coordinator Subagent" -> "Done" [label="returns summary"];
+    "Phase 2: Setup + Launch" -> "Background: orchestrate\n(self-contained, writes report.md)";
+    "Background: orchestrate\n(self-contained, writes report.md)" -> "Done" [label="read report.md, summarize"];
 }
 ```
 
@@ -171,99 +172,47 @@ After the user approves the prompt:
    - **1** — URL liveness check
    - **2** — Content verification (checks if cited claim exists in source)
    - **3** — Full verification + find replacements for dead citations
-7. **Launch the coordinator subagent** as a single background Task using the prompt template below.
-8. Tell the user: "Research is running in the background. I'll report back when it's done."
+7. **Run the pipeline as a background command** (it is self-contained — it dispatches providers, validates citations, builds the comparison matrix, and synthesizes `report.md` itself; no coordinator subagent needed):
+   ```bash
+   uv run --project <SKILL_ROOT> giga-research orchestrate --session-dir <session-dir> --depth <depth>
+   ```
+   Launch it in the background (it runs ~5–10 min). Tell the user: "Research is running in the background. I'll report back when it's done."
+8. When the command completes, read `<session-dir>/meta.json` and `<session-dir>/report.md` and report the summary (see Reporting Results below).
 
 **For manual fallback providers** (if any):
-1. Before launching the coordinator, tell the user: "Please paste the prompt from `<session-dir>/prompt.md` into [Provider]'s deep research interface."
+1. Before launching the pipeline, tell the user: "Please paste the prompt from `<session-dir>/prompt.md` into [Provider]'s deep research interface."
 2. Ask them to save the result to `<session-dir>/raw/<provider>.md`
-3. Wait for confirmation, then launch the coordinator.
+3. Wait for confirmation, then launch the pipeline.
 
 ---
 
-## Coordinator Subagent Instructions
+## Pipeline Outputs
 
-**Launch ONE background subagent** using the Task tool with the following prompt template. Replace `<SKILL_ROOT>`, `<session-dir>` and `<depth>` with actual values.
+`orchestrate` is self-contained. It writes everything into `<session-dir>`:
 
-```
-You are a research coordinator. Your job is to run the research pipeline, then synthesize a unified report.
+- `report.md` — the unified, consensus-tagged report (synthesized in-pipeline via a single Claude call). **Primary deliverable.**
+- `comparison-matrix.md` — per-topic coverage across providers.
+- `validation-log.md` — citation audit (statuses: alive / blocked / dead / verified / unverified).
+- `raw/<provider>.{md,json}` — each provider's original report.
+- `meta.json` — providers used/failed (with errors), per-provider model/tokens/latency, validation depth.
 
-## Step 1: Run the pipeline
+It also prints a JSON summary to stdout (`providers_used`, `providers_failed`, `citation_count`, `citations_validated`, `topics_identified`, `report_generated`).
 
-Run this command:
-```bash
-uv run --project <SKILL_ROOT> giga-research orchestrate \
-    --session-dir <session-dir> \
-    --depth <depth>
-```
+> **report.md synthesis needs a Claude API key.** If `ANTHROPIC_API_KEY` is set (the usual case), `orchestrate` writes `report.md` itself. If it isn't, `report_generated` is `false` and `report.md` is absent — in that case, read the `raw/<provider>.md` files + `comparison-matrix.md` and synthesize `report.md` yourself (consensus/majority/contested/unique tagging; be honest about single-source coverage).
 
-Parse the JSON output. It will contain:
-- providers_used: which providers returned results
-- providers_failed: which providers failed (with error messages)
-- citation_count: total citations found
-- citations_validated: how many were validated
-- topics_identified: list of topics from cross-report analysis
+## Reporting Results
 
-If all providers failed, report this back and stop.
-
-## Step 2: Read the generated files
-
-Read these files from <session-dir>:
-- raw/<provider>.md for each provider in providers_used
-- comparison-matrix.md
-- validation-log.md (if depth > 0)
-
-## Step 3: Synthesize unified report
-
-Using the raw reports and comparison matrix, write <session-dir>/report.md with this structure:
-
-```markdown
-# [Topic] — Research Report
-
-## Executive Summary
-[2-3 paragraph synthesis of key findings]
-
-## Methodology
-Synthesized from research conducted via: [list providers used].
-Citation validation depth: [N].
-
-## Findings
-### [Topic 1]
-[Synthesized findings. Tag sources: [Claude, OpenAI], [Gemini only], etc.]
-[Classify each claim:]
-- **Consensus** — all sources agree (high confidence)
-- **Majority** — 2 of 3 agree (note the dissent)
-- **Contested** — sources disagree (present all perspectives)
-- **Unique** — only one source covers it (note single-source)
-
-### [Topic 2]
-...
-
-## Areas of Disagreement
-[Explicit section for contested claims with all perspectives]
-
-## Gaps & Limitations
-[What none of the sources covered adequately]
-
-## References
-[Deduplicated, validated citation list]
-```
-
-## Step 4: Return summary
-
-Report back with:
-1. Which providers succeeded/failed
-2. Number of topics identified
-3. Number of citations found and validated
-4. Any notable findings (high disagreement, dead citations, unique insights)
-5. The path to report.md as the primary deliverable
-6. Paths to all output files in the session directory
-```
+After the background run completes, read `meta.json` + `report.md` and report to the user:
+1. Which providers succeeded / failed (failures + errors are in `meta.json` → `providers_failed`)
+2. Topics identified, citations found and validated (per the stdout summary)
+3. Notable findings (high disagreement, many blocked/dead citations, unique insights)
+4. The path to `report.md` (primary deliverable) and the other output files
 
 ---
 
 ## Error Handling
 
-- If a provider API call fails: the pipeline isolates the failure and continues with remaining providers. The coordinator reports which providers failed.
-- If all providers fail: the coordinator reports the errors. The parent agent should inform the user and suggest manual fallback.
+- If a provider fails: the pipeline isolates it and continues with the rest. Failures and their error messages are recorded in `meta.json` → `providers_failed` — surface them; never silently skip.
+- If all providers fail: no report is produced. Inform the user and suggest manual fallback.
+- Rate limits are retried automatically with backoff; a persistent failure still lands in `providers_failed`.
 - Never silently skip a failure. Always inform the user and offer a path forward.

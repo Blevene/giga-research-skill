@@ -200,6 +200,34 @@ async def test_depth_one_validates_citations(session_dir, config_no_keys):
     assert result.citations_validated > 0
 
 
+async def test_pipeline_writes_report_md(session_dir, config_no_keys):
+    """orchestrate emits report.md from in-pipeline synthesis (no coordinator subagent)."""
+    clients = [FakeClient("claude", "Findings with a source [x](https://example.com).")]
+    with patch(
+        "giga_research.orchestration.pipeline.synthesize_report",
+        new_callable=AsyncMock,
+        return_value="# Topic — Research Report\n\nSynthesized.",
+    ):
+        result = await run_pipeline(session_dir, depth=0, config=config_no_keys, clients=clients)
+
+    assert result.report_generated is True
+    assert (session_dir / "report.md").read_text(encoding="utf-8").startswith("# Topic")
+
+
+async def test_pipeline_skips_report_when_synthesis_unavailable(session_dir, config_no_keys):
+    """When synthesis returns nothing (e.g. no Claude key), the run still succeeds."""
+    clients = [FakeClient("gemini", "Findings.")]
+    with patch(
+        "giga_research.orchestration.pipeline.synthesize_report",
+        new_callable=AsyncMock,
+        return_value=None,
+    ):
+        result = await run_pipeline(session_dir, depth=0, config=config_no_keys, clients=clients)
+
+    assert result.report_generated is False
+    assert not (session_dir / "report.md").exists()
+
+
 def test_build_clients_skips_missing_sdk(config_no_keys):
     """_build_clients skips providers whose third-party SDK is not installed."""
     _real_import = __import__("importlib").import_module

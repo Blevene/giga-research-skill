@@ -102,7 +102,7 @@ async def test_do_research_handles_failure(config_with_openai: Config):
     mock_failed = MagicMock()
     mock_failed.id = "resp-456"
     mock_failed.status = "failed"
-    mock_failed.error = MagicMock(message="Rate limit exceeded")
+    mock_failed.error = MagicMock(message="Internal server error")
 
     mock_client = MagicMock()
     mock_client.responses.create = AsyncMock(return_value=mock_initial)
@@ -117,3 +117,31 @@ async def test_do_research_handles_failure(config_with_openai: Config):
 
         with pytest.raises(ProviderError, match="failed"):
             await client.research("test prompt")
+
+
+async def test_rate_limit_failure_raises_rate_limit_error(config_with_openai: Config):
+    from giga_research.errors import ProviderRateLimitError
+
+    mock_initial = MagicMock()
+    mock_initial.id = "resp-789"
+    mock_initial.status = "in_progress"
+
+    mock_failed = MagicMock()
+    mock_failed.id = "resp-789"
+    mock_failed.status = "failed"
+    mock_failed.error = MagicMock(
+        message="Rate limit reached for gpt-5.5-pro on tokens per min (TPM): Limit 1000000. try again in 12s"
+    )
+
+    mock_client = MagicMock()
+    mock_client.responses.create = AsyncMock(return_value=mock_initial)
+    mock_client.responses.retrieve = AsyncMock(return_value=mock_failed)
+
+    with (
+        patch("giga_research.clients.openai_client.AsyncOpenAI", return_value=mock_client),
+        patch("giga_research.clients.openai_client.asyncio.sleep"),
+    ):
+        client = OpenAIClient(config_with_openai)
+        with pytest.raises(ProviderRateLimitError) as exc_info:
+            await client.research("test prompt")
+    assert exc_info.value.retry_after_s == 12.0

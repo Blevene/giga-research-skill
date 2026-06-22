@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 import asyncio
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
 from giga_research.clients.base import BaseResearchClient
 from giga_research.config import Config
-from giga_research.errors import ProviderError, ProviderTimeoutError
+from giga_research.errors import ProviderError, ProviderRateLimitError, ProviderTimeoutError
 from giga_research.models import ResearchResult, ResultMetadata
 
 
@@ -72,6 +72,47 @@ async def test_research_raises_after_max_retries(config: Config):
     with pytest.raises(ProviderError, match="always fails"):
         await client.research("test")
     assert call_fn.await_count == 3  # initial + 2 retries
+
+
+async def test_rate_limit_uses_retry_after_backoff(config: Config):
+    """A ProviderRateLimitError backs off using its retry_after_s, then retries."""
+    call_fn = AsyncMock(
+        side_effect=[
+            ProviderRateLimitError("fake", retry_after_s=42.0),
+            ResearchResult(
+                provider="fake",
+                content="ok",
+                citations=[],
+                metadata=ResultMetadata(model="fake-1", tokens_used=10, latency_s=0.1),
+            ),
+        ]
+    )
+    client = FakeClient(config, call_fn)
+    with patch("giga_research.clients.base.asyncio.sleep", new=AsyncMock()) as sleep_mock:
+        result = await client.research("test")
+    assert result.content == "ok"
+    # Backoff honored the server-provided retry_after, not the short generic delay.
+    sleep_mock.assert_awaited_once_with(42.0)
+
+
+async def test_rate_limit_without_retry_after_uses_long_backoff(config: Config):
+    """Without retry_after, rate-limit backoff is far longer than the generic 1-5s."""
+    call_fn = AsyncMock(
+        side_effect=[
+            ProviderRateLimitError("fake", retry_after_s=None),
+            ResearchResult(
+                provider="fake",
+                content="ok",
+                citations=[],
+                metadata=ResultMetadata(model="fake-1", tokens_used=10, latency_s=0.1),
+            ),
+        ]
+    )
+    client = FakeClient(config, call_fn)
+    with patch("giga_research.clients.base.asyncio.sleep", new=AsyncMock()) as sleep_mock:
+        await client.research("test")
+    (delay,), _ = sleep_mock.await_args
+    assert delay >= 20.0  # _RATE_LIMIT_BASE_DELAY
 
 
 async def test_research_timeout(config: Config):

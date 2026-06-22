@@ -17,9 +17,11 @@ Each provider uses its native deep research capability:
 
 | Provider | API | Model |
 |----------|-----|-------|
-| Claude | Messages API + Web Search + Web Fetch | claude-sonnet-4-6 |
-| OpenAI | Responses API (background) | gpt-5.5-pro |
+| Claude | Messages API + Web Search | claude-sonnet-4-6 |
+| OpenAI | Responses API (background) | o3-deep-research |
 | Gemini | Interactions API (background) | deep-research-preview-04-2026 |
+
+Model/agent IDs are overridable via env (`CLAUDE_RESEARCH_MODEL`, `OPENAI_RESEARCH_MODEL`, `GEMINI_RESEARCH_AGENT`) — e.g. set `OPENAI_RESEARCH_MODEL=o4-mini-deep-research` for faster/cheaper OpenAI runs.
 
 ## Installation
 
@@ -80,7 +82,7 @@ Where to get each key:
 | Provider | Where to get your key | Required plan |
 |----------|----------------------|---------------|
 | Claude | [console.anthropic.com/settings/keys](https://console.anthropic.com/settings/keys) | Any paid plan |
-| OpenAI | [platform.openai.com/api-keys](https://platform.openai.com/api-keys) | Plus or Team (research uses gpt-5.5-pro via the Responses API) |
+| OpenAI | [platform.openai.com/api-keys](https://platform.openai.com/api-keys) | Plus or Team (deep research requires access to the deep-research models) |
 | Gemini | [aistudio.google.com/apikey](https://aistudio.google.com/apikey) | Free tier works, but deep research may require paid |
 
 The skill works with **any subset** of these keys (minimum 1). Missing providers can be handled via manual fallback during a research session.

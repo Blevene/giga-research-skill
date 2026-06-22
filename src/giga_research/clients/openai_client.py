@@ -8,14 +8,19 @@ import time
 from openai import AsyncOpenAI
 
 from giga_research.clients.base import BaseResearchClient
-from giga_research.config import Config
-from giga_research.errors import ProviderError
+from giga_research.config import DEFAULT_OPENAI_MODEL, Config
+from giga_research.errors import (
+    ProviderError,
+    ProviderRateLimitError,
+    is_rate_limit_message,
+    parse_retry_after_seconds,
+)
 from giga_research.models import Citation, ResearchResult, ResultMetadata
 
-# o3-deep-research is deprecated (shutdown 2026-12-11). gpt-5.5-pro is the
-# recommended replacement: a general reasoning model driven with the web_search
-# tool via the Responses API (deep research requires at least one data source).
-_MODEL = "gpt-5.5-pro"
+# Default is the dedicated, proven deep-research model. o4-mini-deep-research
+# (cheaper/faster) and gpt-5.5-pro (general successor; o3/o4-mini deep-research
+# retire 2026-12-11) can be selected via OPENAI_RESEARCH_MODEL.
+_MODEL = DEFAULT_OPENAI_MODEL
 _POLL_INTERVAL_S = 10
 
 
@@ -27,6 +32,7 @@ class OpenAIClient(BaseResearchClient):
 
     def __init__(self, config: Config) -> None:
         super().__init__(config)
+        self._model = config.openai_model
         if config.openai_api_key:
             self._client = AsyncOpenAI(api_key=config.openai_api_key, timeout=3600)
         else:
@@ -43,7 +49,7 @@ class OpenAIClient(BaseResearchClient):
         try:
             # Launch deep research as a background response
             response = await self._client.responses.create(
-                model=_MODEL,
+                model=self._model,
                 input=prompt,
                 background=True,
                 tools=[{"type": "web_search"}],
@@ -60,11 +66,15 @@ class OpenAIClient(BaseResearchClient):
 
             if response.status == "failed":
                 error_msg = getattr(getattr(response, "error", None), "message", "Unknown error")
+                if is_rate_limit_message(error_msg):
+                    raise ProviderRateLimitError("openai", parse_retry_after_seconds(error_msg))
                 raise ProviderError("openai", f"Deep research failed: {error_msg}")
 
         except ProviderError:
             raise
         except Exception as exc:
+            if is_rate_limit_message(str(exc)):
+                raise ProviderRateLimitError("openai", parse_retry_after_seconds(str(exc))) from exc
             raise ProviderError("openai", str(exc)) from exc
 
         latency = time.monotonic() - start
@@ -79,7 +89,7 @@ class OpenAIClient(BaseResearchClient):
             content=content,
             citations=citations,
             metadata=ResultMetadata(
-                model=response.model or _MODEL,
+                model=response.model or self._model,
                 tokens_used=tokens,
                 latency_s=round(latency, 2),
             ),

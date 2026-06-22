@@ -151,18 +151,20 @@ async def run_pipeline(
     # 8. Save session metadata
     providers_used = list(results.keys())
     providers_skipped = [p for p in ALL_PROVIDERS if p not in providers_used and p not in errors]
+    providers_failed = {name: str(exc) for name, exc in errors.items()}
     save_session_metadata(
         session_dir,
         providers_used=providers_used,
         providers_skipped=providers_skipped,
         citation_validation_depth=depth,
         results=results,
+        providers_failed=providers_failed,
     )
 
     return PipelineResult(
         session_dir=str(session_dir),
         providers_used=providers_used,
-        providers_failed={name: str(exc) for name, exc in errors.items()},
+        providers_failed=providers_failed,
         citation_count=len(all_citations),
         citations_validated=sum(1 for c in validated if c.validation_status != ValidationStatus.UNCHECKED),
         topics_identified=list(matrix.keys()),

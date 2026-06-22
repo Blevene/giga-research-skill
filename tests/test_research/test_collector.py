@@ -77,3 +77,19 @@ def test_save_session_metadata(tmp_output: Path):
     assert meta["providers_used"] == ["claude"]
     assert meta["providers_skipped"] == ["openai", "gemini"]
     assert "claude" in meta["provider_metadata"]
+    assert meta["providers_failed"] == {}  # defaults to empty when none provided
+
+
+def test_save_session_metadata_records_failures(tmp_output: Path):
+    session_dir = create_session_dir(tmp_output, "test topic")
+    results = {"gemini": _make_result("gemini")}
+    save_session_metadata(
+        session_dir,
+        providers_used=["gemini"],
+        providers_skipped=[],
+        citation_validation_depth=2,
+        results=results,
+        providers_failed={"openai": "[openai] Rate limited"},
+    )
+    meta = json.loads((session_dir / "meta.json").read_text())
+    assert meta["providers_failed"] == {"openai": "[openai] Rate limited"}

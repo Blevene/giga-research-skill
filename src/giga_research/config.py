@@ -22,6 +22,15 @@ CLIENT_REGISTRY: dict[str, tuple[str, str, str]] = {
 
 ALL_PROVIDERS: list[str] = list(CLIENT_REGISTRY)
 
+# Default model / agent IDs per provider. Overridable via env so a provider's
+# model can be changed without a code edit when IDs deprecate (the recurring
+# churn this skill keeps hitting). OpenAI defaults to the dedicated, proven
+# deep-research model; o4-mini-deep-research (cheaper/faster) and gpt-5.5-pro
+# (general successor) are available by setting OPENAI_RESEARCH_MODEL.
+DEFAULT_CLAUDE_MODEL = "claude-sonnet-4-6"
+DEFAULT_OPENAI_MODEL = "o3-deep-research"
+DEFAULT_GEMINI_AGENT = "deep-research-preview-04-2026"
+
 
 class Config(BaseModel):
     """Application configuration with secrets hidden from repr."""
@@ -29,6 +38,10 @@ class Config(BaseModel):
     claude_api_key: str | None = Field(default=None, repr=False)
     openai_api_key: str | None = Field(default=None, repr=False)
     gemini_api_key: str | None = Field(default=None, repr=False)
+
+    claude_model: str = DEFAULT_CLAUDE_MODEL
+    openai_model: str = DEFAULT_OPENAI_MODEL
+    gemini_agent: str = DEFAULT_GEMINI_AGENT
 
     request_timeout: int = 900
     max_retries: int = 3
@@ -60,4 +73,7 @@ class Config(BaseModel):
             claude_api_key=os.environ.get("ANTHROPIC_API_KEY"),
             openai_api_key=os.environ.get("OPENAI_API_KEY"),
             gemini_api_key=os.environ.get("GEMINI_API_KEY"),
+            claude_model=os.environ.get("CLAUDE_RESEARCH_MODEL", DEFAULT_CLAUDE_MODEL),
+            openai_model=os.environ.get("OPENAI_RESEARCH_MODEL", DEFAULT_OPENAI_MODEL),
+            gemini_agent=os.environ.get("GEMINI_RESEARCH_AGENT", DEFAULT_GEMINI_AGENT),
         )

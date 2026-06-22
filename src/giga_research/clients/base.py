@@ -7,8 +7,13 @@ import random
 from abc import ABC, abstractmethod
 
 from giga_research.config import Config
-from giga_research.errors import ProviderError, ProviderTimeoutError
+from giga_research.errors import ProviderError, ProviderRateLimitError, ProviderTimeoutError
 from giga_research.models import ResearchResult
+
+# Rate limits (esp. per-minute token limits) need a real wait, not the 1-5s
+# exponential backoff used for generic provider errors.
+_RATE_LIMIT_BASE_DELAY = 20.0
+_RATE_LIMIT_MAX_DELAY = 90.0
 
 
 class BaseResearchClient(ABC):
@@ -46,7 +51,14 @@ class BaseResearchClient(ABC):
             except ProviderError as exc:
                 last_error = exc
                 if attempt < self.config.max_retries:
-                    delay = (2**attempt) + random.uniform(0, 1)
+                    if isinstance(exc, ProviderRateLimitError):
+                        # Honor a server-provided retry-after, else back off long
+                        # enough for a per-minute window to clear.
+                        delay = exc.retry_after_s if exc.retry_after_s is not None else min(
+                            _RATE_LIMIT_BASE_DELAY * (2**attempt), _RATE_LIMIT_MAX_DELAY
+                        )
+                    else:
+                        delay = (2**attempt) + random.uniform(0, 1)
                     await asyncio.sleep(delay)
 
         raise last_error  # type: ignore[misc]

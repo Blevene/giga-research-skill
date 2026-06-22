@@ -57,7 +57,6 @@ def test_config_from_env():
 
 
 def test_config_from_env_partial():
-    env = {"OPENAI_API_KEY": "only-openai"}
     cleaned = {k: v for k, v in os.environ.items()}
     cleaned.pop("ANTHROPIC_API_KEY", None)
     cleaned.pop("GEMINI_API_KEY", None)
@@ -81,3 +80,27 @@ def test_config_secrets_not_in_repr():
 def test_config_validation_depth_range():
     c = Config(citation_validation_depth=3)
     assert c.citation_validation_depth == 3
+
+
+def test_config_default_models():
+    c = Config()
+    assert c.claude_model == "claude-sonnet-4-6"
+    assert c.openai_model == "o3-deep-research"  # dedicated deep-research model, not gpt-5.5-pro
+    assert c.gemini_agent == "deep-research-preview-04-2026"
+
+
+def test_config_from_env_model_overrides():
+    env = {
+        "OPENAI_API_KEY": "k",
+        "OPENAI_RESEARCH_MODEL": "o4-mini-deep-research",
+        "GEMINI_RESEARCH_AGENT": "deep-research-max-preview-04-2026",
+        "CLAUDE_RESEARCH_MODEL": "claude-opus-4-8",
+    }
+    with (
+        patch("giga_research.config.load_dotenv"),
+        patch.dict(os.environ, env, clear=False),
+    ):
+        c = Config.from_env()
+    assert c.openai_model == "o4-mini-deep-research"
+    assert c.gemini_agent == "deep-research-max-preview-04-2026"
+    assert c.claude_model == "claude-opus-4-8"

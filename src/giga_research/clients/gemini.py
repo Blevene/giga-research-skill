@@ -8,11 +8,17 @@ import time
 from google import genai
 
 from giga_research.clients.base import BaseResearchClient
-from giga_research.config import Config
-from giga_research.errors import ProviderError
+from giga_research.config import DEFAULT_GEMINI_AGENT, Config
+from giga_research.errors import (
+    ProviderError,
+    ProviderRateLimitError,
+    is_rate_limit_message,
+    parse_retry_after_seconds,
+)
 from giga_research.models import Citation, ResearchResult, ResultMetadata
 
-_AGENT = "deep-research-preview-04-2026"
+# Default agent; overridable via GEMINI_RESEARCH_AGENT.
+_AGENT = DEFAULT_GEMINI_AGENT
 _POLL_INTERVAL_S = 10
 
 # Terminal statuses that are not a successful completion. The Interactions API
@@ -29,6 +35,7 @@ class GeminiClient(BaseResearchClient):
 
     def __init__(self, config: Config) -> None:
         super().__init__(config)
+        self._agent = config.gemini_agent
         if config.gemini_api_key:
             self._client = genai.Client(api_key=config.gemini_api_key)
         else:
@@ -46,7 +53,7 @@ class GeminiClient(BaseResearchClient):
             # Launch deep research as a background interaction
             interaction = self._client.interactions.create(
                 input=prompt,
-                agent=_AGENT,
+                agent=self._agent,
                 background=True,
             )
 
@@ -57,13 +64,17 @@ class GeminiClient(BaseResearchClient):
                 if status == "completed":
                     break
                 if status in _FAILURE_STATUSES:
-                    error_msg = getattr(interaction, "error", None) or status
+                    error_msg = str(getattr(interaction, "error", None) or status)
+                    if is_rate_limit_message(error_msg):
+                        raise ProviderRateLimitError("gemini", parse_retry_after_seconds(error_msg))
                     raise ProviderError("gemini", f"Deep research {status}: {error_msg}")
                 await asyncio.sleep(_POLL_INTERVAL_S)
 
         except ProviderError:
             raise
         except Exception as exc:
+            if is_rate_limit_message(str(exc)):
+                raise ProviderRateLimitError("gemini", parse_retry_after_seconds(str(exc))) from exc
             raise ProviderError("gemini", str(exc)) from exc
 
         latency = time.monotonic() - start
@@ -76,7 +87,7 @@ class GeminiClient(BaseResearchClient):
             content=content,
             citations=citations,
             metadata=ResultMetadata(
-                model=getattr(interaction, "model", None) or _AGENT,
+                model=getattr(interaction, "model", None) or self._agent,
                 tokens_used=tokens,
                 latency_s=round(latency, 2),
             ),
@@ -84,42 +95,61 @@ class GeminiClient(BaseResearchClient):
 
 
 def _extract_content_and_citations(interaction: object) -> tuple[str, list[Citation]]:
-    """Pull report text and source citations from an interaction.
+    """Pull the full report text and source citations from an interaction.
 
-    Version-defensive across the google-genai schema change: 2.x exposes the
-    convenience ``output_text`` plus a ``steps`` array, while 1.x used an
-    ``outputs`` array of items. Either way, citations live as ``annotations``
-    on text content blocks.
+    The report is assembled from the ``model_output`` steps (2.x schema). We do
+    NOT use ``interaction.output_text`` for the body: it returns only the final
+    output segment, so a multi-step report loses its leading sections (title,
+    intro, and earlier topics). Citations live as ``annotations`` on text blocks.
+
+    Version-defensive: falls back to the 1.x ``outputs`` array, and finally to
+    ``output_text`` only if no step text is found at all.
     """
     seen_urls: set[str] = set()
     citations: list[Citation] = []
     text_parts: list[str] = []
 
-    # Content-bearing items: 2.x `steps`, else 1.x `outputs`.
-    items = getattr(interaction, "steps", None)
-    if not items:
-        items = getattr(interaction, "outputs", None) or []
+    steps = getattr(interaction, "steps", None)
+    if steps:
+        for step in steps:
+            # Skip the echoed user input and any tool/thinking steps — keep the report.
+            if getattr(step, "type", None) != "model_output":
+                continue
+            for block in getattr(step, "content", None) or []:
+                block_text = getattr(block, "text", None)
+                if block_text:
+                    text_parts.append(block_text)
+                for ann in getattr(block, "annotations", None) or []:
+                    citation = _annotation_to_citation(ann, seen_urls)
+                    if citation is not None:
+                        citations.append(citation)
+        # Each model_output text block carries its own leading/trailing newlines.
+        content = "".join(text_parts)
+    else:
+        # 1.x fallback: an `outputs` array of items, each with `.content` blocks
+        # or a direct `.text`.
+        for item in getattr(interaction, "outputs", None) or []:
+            blocks = getattr(item, "content", None)
+            if blocks is None:
+                item_text = getattr(item, "text", None)
+                if item_text:
+                    text_parts.append(item_text)
+                continue
+            for block in blocks:
+                block_text = getattr(block, "text", None)
+                if block_text:
+                    text_parts.append(block_text)
+                for ann in getattr(block, "annotations", None) or []:
+                    citation = _annotation_to_citation(ann, seen_urls)
+                    if citation is not None:
+                        citations.append(citation)
+        content = "\n\n".join(text_parts)
 
-    for item in items:
-        blocks = getattr(item, "content", None)
-        if blocks is None:
-            # 1.x output items may expose `.text` directly.
-            item_text = getattr(item, "text", None)
-            if item_text:
-                text_parts.append(item_text)
-            continue
-        for block in blocks:
-            block_text = getattr(block, "text", None)
-            if block_text:
-                text_parts.append(block_text)
-            for ann in getattr(block, "annotations", None) or []:
-                citation = _annotation_to_citation(ann, seen_urls)
-                if citation is not None:
-                    citations.append(citation)
-
-    # Prefer the SDK's joined convenience property when available and non-empty.
-    output_text = getattr(interaction, "output_text", None)
-    content = output_text if isinstance(output_text, str) and output_text else "\n\n".join(text_parts)
+    # Last resort only: if no step/output text was found, use output_text.
+    if not content.strip():
+        output_text = getattr(interaction, "output_text", None)
+        if isinstance(output_text, str):
+            content = output_text
 
     return content, citations
 

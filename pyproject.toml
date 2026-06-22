@@ -47,3 +47,8 @@ line-length = 120
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "UP", "B", "SIM"]
+
+[tool.uv]
+# Install all provider SDKs by default so `uv run`/`uv sync` keep them current
+# (uv otherwise syncs only base deps, leaving provider extras stale on update).
+default-extras = ["all"]

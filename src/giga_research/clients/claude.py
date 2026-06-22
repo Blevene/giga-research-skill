@@ -41,12 +41,17 @@ class ClaudeClient(BaseResearchClient):
                 max_tokens=16384,
                 betas=[_BETA],
                 messages=[{"role": "user", "content": prompt}],
-                tools=[{"type": "web_search_20260209", "name": "web_search"}],
+                tools=[
+                    {"type": "web_search_20260209", "name": "web_search"},
+                    {"type": "web_fetch_20260209", "name": "web_fetch"},
+                ],
                 system=(
-                    "You are a thorough research assistant with web search capabilities. "
-                    "Use web search extensively to find current, accurate information. "
-                    "Ground every claim in real sources with verifiable URLs. "
-                    "Provide comprehensive, well-cited research with clear structure."
+                    "You are a thorough research assistant with web search and web fetch "
+                    "capabilities. Use web search extensively to find current, accurate "
+                    "information, then use web fetch to read the most promising sources in "
+                    "full before drawing conclusions. Ground every claim in real sources "
+                    "with verifiable URLs. Provide comprehensive, well-cited research with "
+                    "clear structure."
                 ),
             )
         except Exception as exc:
@@ -92,6 +97,19 @@ class ClaudeClient(BaseResearchClient):
                                     title=getattr(result, "title", None),
                                 )
                             )
+            elif hasattr(block, "type") and block.type == "web_fetch_tool_result":
+                # web_fetch returns a single web_fetch_result with the fetched URL
+                fetched = getattr(block, "content", None)
+                url = getattr(fetched, "url", None)
+                if url and url not in seen_urls:
+                    seen_urls.add(url)
+                    extracted_citations.append(
+                        Citation(
+                            text=getattr(fetched, "title", "") or "",
+                            url=url,
+                            title=getattr(fetched, "title", None),
+                        )
+                    )
 
         content = "\n\n".join(text_parts)
 

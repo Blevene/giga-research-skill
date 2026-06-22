@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from giga_research.clients.claude import ClaudeClient, _BETA
+from giga_research.clients.claude import _BETA, ClaudeClient
 from giga_research.config import Config
 
 
@@ -50,6 +50,17 @@ def _make_search_result(url: str, title: str) -> MagicMock:
     return result
 
 
+def _make_fetch_block(url: str, title: str) -> MagicMock:
+    """Create a mock WebFetchToolResultBlock (single web_fetch_result content)."""
+    fetched = MagicMock(spec=["url", "title"])
+    fetched.url = url
+    fetched.title = title
+    block = MagicMock(spec=["type", "content"])
+    block.type = "web_fetch_tool_result"
+    block.content = fetched
+    return block
+
+
 async def test_do_research_returns_result(config_with_claude: Config):
     # Simulate mixed content blocks (text + web search results)
     text_block = MagicMock(text="# Research Report\n\nFindings here.")
@@ -81,10 +92,11 @@ async def test_do_research_returns_result(config_with_claude: Config):
     assert result.metadata.model == "claude-sonnet-4-6"
     assert result.metadata.tokens_used == 600
 
-    # Verify web search tool was included with new 20260209 version
+    # Verify web search + web fetch tools were included with new 20260209 version
     call_kwargs = mock_client.beta.messages.create.call_args.kwargs
     tools = call_kwargs["tools"]
     assert any(t.get("type") == "web_search_20260209" for t in tools)
+    assert any(t.get("type") == "web_fetch_20260209" for t in tools)
     assert _BETA in call_kwargs["betas"]
 
 
@@ -147,6 +159,32 @@ async def test_extracts_citations_from_web_search_result_blocks(config_with_clau
     assert result.citations[0].url == "https://example.com/page1"
     assert result.citations[0].title == "Page One"
     assert result.citations[1].url == "https://example.com/page2"
+
+
+async def test_extracts_citations_from_web_fetch_result_blocks(config_with_claude: Config):
+    """Citations from WebFetchToolResultBlock.content (the fetched URL) are extracted."""
+    fetch_block = _make_fetch_block("https://example.com/fetched", "Fetched Doc")
+
+    text_block = MagicMock(text="Analysis based on fetched content.")
+    text_block.type = "text"
+    text_block.citations = None
+
+    mock_message = MagicMock()
+    mock_message.content = [fetch_block, text_block]
+    mock_message.usage.input_tokens = 50
+    mock_message.usage.output_tokens = 200
+    mock_message.model = "claude-sonnet-4-6"
+
+    mock_client = MagicMock()
+    mock_client.beta.messages.create = AsyncMock(return_value=mock_message)
+
+    with patch("giga_research.clients.claude.AsyncAnthropic", return_value=mock_client):
+        client = ClaudeClient(config_with_claude)
+        result = await client.research("test prompt")
+
+    assert len(result.citations) == 1
+    assert result.citations[0].url == "https://example.com/fetched"
+    assert result.citations[0].title == "Fetched Doc"
 
 
 async def test_deduplicates_citations_across_sources(config_with_claude: Config):

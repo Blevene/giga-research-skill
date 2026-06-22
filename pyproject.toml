@@ -14,7 +14,7 @@ dependencies = [
 [project.optional-dependencies]
 claude = ["anthropic>=0.40"]
 openai = ["openai>=1.50"]
-gemini = ["google-genai>=1.0"]
+gemini = ["google-genai>=2.0"]
 all = [
     "giga-research[claude,openai,gemini]",
 ]

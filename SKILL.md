@@ -51,9 +51,9 @@ A timestamped research session containing:
 
 | Provider | Model | Method | Typical Time |
 |----------|-------|--------|-------------|
-| Claude | claude-sonnet-4-5 | Messages API + web search | ~1-2 min |
-| OpenAI | o3-deep-research | Responses API (background polling) | ~5-10 min |
-| Gemini | deep-research-pro | Interactions API (background polling) | ~5-10 min |
+| Claude | claude-sonnet-4-6 | Messages API + web search + web fetch | ~1-2 min |
+| OpenAI | gpt-5.5-pro | Responses API (background polling) | ~5-10 min |
+| Gemini | deep-research-preview-04-2026 | Interactions API (background polling) | ~5-10 min |
 
 Works with any subset (minimum 1). Missing providers can use manual fallback (paste prompt into web UI, save result to session directory).
 

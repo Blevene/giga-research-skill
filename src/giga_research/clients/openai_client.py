@@ -10,9 +10,12 @@ from openai import AsyncOpenAI
 from giga_research.clients.base import BaseResearchClient
 from giga_research.config import Config
 from giga_research.errors import ProviderError
-from giga_research.models import ResearchResult, ResultMetadata
+from giga_research.models import Citation, ResearchResult, ResultMetadata
 
-_MODEL = "o3-deep-research"
+# o3-deep-research is deprecated (shutdown 2026-12-11). gpt-5.5-pro is the
+# recommended replacement: a general reasoning model driven with the web_search
+# tool via the Responses API (deep research requires at least one data source).
+_MODEL = "gpt-5.5-pro"
 _POLL_INTERVAL_S = 10
 
 
@@ -43,7 +46,7 @@ class OpenAIClient(BaseResearchClient):
                 model=_MODEL,
                 input=prompt,
                 background=True,
-                tools=[{"type": "web_search_preview"}],
+                tools=[{"type": "web_search"}],
                 instructions=(
                     "You are a thorough research assistant. Provide comprehensive, "
                     "well-cited research with clear structure and evidence-based findings."
@@ -66,6 +69,7 @@ class OpenAIClient(BaseResearchClient):
 
         latency = time.monotonic() - start
         content = response.output_text or ""
+        citations = _extract_citations(response)
         tokens = 0
         if response.usage:
             tokens = (response.usage.input_tokens or 0) + (response.usage.output_tokens or 0)
@@ -73,10 +77,33 @@ class OpenAIClient(BaseResearchClient):
         return ResearchResult(
             provider="openai",
             content=content,
-            citations=[],
+            citations=citations,
             metadata=ResultMetadata(
                 model=response.model or _MODEL,
                 tokens_used=tokens,
                 latency_s=round(latency, 2),
             ),
         )
+
+
+def _extract_citations(response: object) -> list[Citation]:
+    """Extract url-citation annotations from Responses API output text blocks.
+
+    Each output message holds content blocks; output-text blocks carry an
+    `annotations` list of url citations (`url`, `title`, `start_index`,
+    `end_index`). Deduplicated by URL.
+    """
+    seen_urls: set[str] = set()
+    citations: list[Citation] = []
+
+    for item in getattr(response, "output", None) or []:
+        for block in getattr(item, "content", None) or []:
+            for ann in getattr(block, "annotations", None) or []:
+                url = getattr(ann, "url", None)
+                if not url or url in seen_urls:
+                    continue
+                seen_urls.add(url)
+                title = getattr(ann, "title", None)
+                citations.append(Citation(text=title or "", url=url, title=title))
+
+    return citations
